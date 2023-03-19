@@ -7,34 +7,39 @@ from typing import Dict, List
 from datamodel import OrderDepth, TradingState, Order
 import numpy as np
 
-MAX_POS = 10
+MAX_POS = 20
+
+
 class Trader:
 
     def __init__(self):
         # dictionary mapping product names to list consisting of last own_trades and market_trades of the product
         self.cached_prices = {}
 
+        # How many last days to consider when calculating the average prices
+        self.last_days = 5
 
-        # how many last days to consider when calculating the average prices
-        self.last_days = 1
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         """
         Only method required. It takes all buy and sell orders for all symbols as an input,
         and outputs a list of orders to be sent
         """
-
-        self.cache_prices(state.own_trades, state.market_trades)
+        print(
+            f"timestamp: {state.timestamp}, listings: {state.listings}, order_depths: {state.order_depths}, own_trades: {state.own_trades}, market_trades: {state.market_trades}, position: {state.position}, observations: {state.observations}")
+        self.cache_prices(state)
         # Initialize the method output dict as an empty dict
         result = {}
 
         # Iterate over all the keys (the available products) contained in the order depths
         for product in state.order_depths.keys():
 
+            prod_position = 0 if product not in state.position.keys() else state.position[product]
             # skip product if not enough data
             if len(self.cached_prices[product]) < self.last_days:
+                print(f"Skipping {len(self.cached_prices[product])}")
                 continue
 
-            # Retrieve the Order Depth containing all the market BUY and SELL orders for PEARLS
+            # Retrieve the Order Depth containing all the market BUY and SELL orders
             order_depth: OrderDepth = state.order_depths[product]
 
             # Initialize the list of Orders to be sent as an empty list
@@ -43,6 +48,7 @@ class Trader:
             # Define a fair value
             acceptable_price = self.calculate_price(product)
 
+            print(f"acceptable price for {product}: {acceptable_price}")
             # If statement checks if there are any SELL orders
             if len(order_depth.sell_orders) > 0:
 
@@ -52,14 +58,22 @@ class Trader:
                 best_ask_volume = order_depth.sell_orders[best_ask]
 
                 # Check if the lowest ask (sell order) is lower than the above defined fair value
-                if best_ask < acceptable_price and state.position[product] - best_ask_volume <= MAX_POS:
-                    # In case the lowest ask is lower than our fair value,
-                    # This presents an opportunity for us to buy cheaply
-                    # The code below therefore sends a BUY order at the price level of the ask,
-                    # with the same quantity
-                    # We expect this order to trade with the sell order
-                    print("BUY", str(-best_ask_volume) + "x", product, best_ask)
-                    orders.append(Order(product, best_ask, -best_ask_volume))
+                if best_ask < acceptable_price:
+                    if prod_position - best_ask_volume <= MAX_POS:
+                        # In case the lowest ask is lower than our fair value,
+                        # This presents an opportunity for us to buy cheaply
+                        # The code below therefore sends a BUY order at the price level of the ask,
+                        # with the same quantity
+                        # We expect this order to trade with the sell order
+                        print("BUY", str(-best_ask_volume) + "x", product, best_ask)
+                        orders.append(Order(product, best_ask, -best_ask_volume))
+                    else:
+                        # Buy as much as we can without exceeding the MAX_POS
+                        print(f"exceeding max pos for {product} in selling")
+                        vol = MAX_POS - prod_position
+                        print(f"buying {vol} of {product}")
+                        orders.append(Order(product, best_ask, vol))
+                        print(f"exceeding max pos for {product} in buying")
 
             # The below code block is similar to the one above,
             # the difference is that it finds the highest bid (buy order)
@@ -68,10 +82,17 @@ class Trader:
             if len(order_depth.buy_orders) != 0:
                 best_bid = max(order_depth.buy_orders.keys())
                 best_bid_volume = order_depth.buy_orders[best_bid]
-                if best_bid > acceptable_price and state.position[product] - best_bid_volume >= -MAX_POS:
-                    print("SELL", str(best_bid_volume) + "x", product, best_bid)
-                    orders.append(Order(product, best_bid, -best_bid_volume))
+                if best_bid > acceptable_price:
+                    if prod_position - best_bid_volume >= -MAX_POS:
+                        print("SELL", str(best_bid_volume) + "x", product, best_bid)
+                        orders.append(Order(product, best_bid, -best_bid_volume))
 
+                    else:
+                        # Sell as much as we can without exceeding the MAX_POS
+                        print(f"exceeding max pos for {product} in selling")
+                        vol = prod_position + MAX_POS
+                        print(f"selling {vol} of {product}")
+                        orders.append(Order(product, best_bid, -vol))
             # Add all the above orders to the result dict
             result[product] = orders
 
@@ -79,25 +100,31 @@ class Trader:
             # Depending on the logic above
         return result
 
-    def cache_prices(self, own_trades, market_trades):
+    def cache_prices(self, state):
         # Caches prices of bought and sold products
-        for product in own_trades.keys():
+
+        market_trades = state.market_trades
+        own_trades = state.own_trades
+        listings = state.listings
+        for product in listings.keys():
 
             if product not in self.cached_prices.keys():
                 self.cached_prices[product] = []
-
-            prod_trades = own_trades[product] + market_trades[product]
+            prod_trades = []
+            if product in own_trades.keys():
+                prod_trades = prod_trades + own_trades[product]
+            if product in market_trades.keys():
+                prod_trades = prod_trades + market_trades[product]
             if len(prod_trades) == 0:
                 continue
 
             prices = [(trade.quantity, trade.price) for trade in prod_trades]
             self.cached_prices[product].append(prices)
 
-
     def calculate_price(self, product):
         # Calculate average price of a product
         relevant_prices = list(chain(*(self.cached_prices[product][-self.last_days:])))
-        values = np.array([x[0] for x in relevant_prices])
-        quantities = np.abs(np.array([x[1] for x in relevant_prices]))
+        values = np.array([x[1] for x in relevant_prices])
+        quantities = np.abs(np.array([x[0] for x in relevant_prices]))
 
         return np.average(values, weights=quantities)
