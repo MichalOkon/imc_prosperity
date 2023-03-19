@@ -41,9 +41,24 @@ market_trades = {
             buyer="",
             seller="",
             timestamp=900
+        ),
+        Trade(
+            symbol="PEARLS",
+            price=14,
+            quantity=-3,
+            buyer="",
+            seller="",
+            timestamp=900
         )
     ],
-    "BANANAS": []
+    "BANANAS": [        Trade(
+            symbol="BANANAS",
+            price=140,
+            quantity=6,
+            buyer="",
+            seller="",
+            timestamp=900
+        )]
 }
 
 position = {
@@ -59,8 +74,8 @@ state = TradingState(
     order_depths=order_depths,
     own_trades=own_trades,
     market_trades=market_trades,
-    observations={},
-    position={}
+    observations=observations,
+    position=position
 )
 
 trader = Trader()
