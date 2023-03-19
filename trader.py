@@ -17,7 +17,7 @@ class Trader:
         self.cached_prices = {}
 
         # How many last days to consider when calculating the average prices
-        self.last_days = 5
+        self.last_days = 150
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         """
@@ -111,8 +111,8 @@ class Trader:
             if product not in self.cached_prices.keys():
                 self.cached_prices[product] = []
             prod_trades = []
-            if product in own_trades.keys():
-                prod_trades = prod_trades + own_trades[product]
+            # if product in own_trades.keys():
+            #     prod_trades = prod_trades + own_trades[product]
             if product in market_trades.keys():
                 prod_trades = prod_trades + market_trades[product]
             if len(prod_trades) == 0:
@@ -123,8 +123,24 @@ class Trader:
 
     def calculate_price(self, product):
         # Calculate average price of a product
-        relevant_prices = list(chain(*(self.cached_prices[product][-self.last_days:])))
-        values = np.array([x[1] for x in relevant_prices])
-        quantities = np.abs(np.array([x[0] for x in relevant_prices]))
+        # relevant_prices = list(chain(*(self.cached_prices[product][-self.last_days:])))
+        # values = np.array([x[1] for x in relevant_prices])
+        # quantities = np.abs(np.array([x[0] for x in relevant_prices]))
 
-        return np.average(values, weights=quantities)
+        relevant_prices = self.cached_prices[product][-self.last_days:]
+
+        # print(relevant_prices)
+
+        days_prices = []
+
+        for day in relevant_prices:
+            days_prices.append(np.average([x[1] for x in day], weights=[x[0] for x in day]))
+
+        x = np.arange(0, self.last_days)
+        y = np.array(days_prices)
+        z = np.polyfit(x, y, 5)
+
+        p = np.poly1d(z)
+        acceptable = p(self.last_days)
+
+        return acceptable
