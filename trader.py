@@ -17,7 +17,7 @@ class Trader:
         self.cached_prices = {}
 
         # How many last days to consider when calculating the average prices
-        self.last_days = 100
+        self.last_days = 1
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         """
@@ -76,7 +76,12 @@ class Trader:
                         print(f"buying {vol} of {product}")
                         orders.append(Order(product, best_ask, vol))
                         print(f"exceeding max pos for {product} in buying")
-
+                # Add order with the best prices possible and max possible volume
+                else:
+                    vol = MAX_POS - prod_position
+                    price = np.min([x[1] for x in chain(*self.cached_prices[product][-self.last_days:])])
+                    print(f"filling up orders {vol} with price {price}")
+                    orders.append(Order(product, price, vol))
             # The below code block is similar to the one above,
             # the difference is that it finds the highest bid (buy order)
             # If the price of the order is higher than the fair value
@@ -95,6 +100,14 @@ class Trader:
                         vol = prod_position + MAX_POS
                         print(f"selling {vol} of {product}")
                         orders.append(Order(product, best_bid, -vol))
+
+            else:
+                # Add order with the best prices possible and max possible volume
+                vol = prod_position + MAX_POS
+                price = np.max([x[1] for x in chain(*self.cached_prices[product][-self.last_days:])])
+                print(f"filling up orders {-vol} with price {price}")
+                orders.append(Order(product, price, -vol))
+
             # Add all the above orders to the result dict
             result[product] = orders
 
