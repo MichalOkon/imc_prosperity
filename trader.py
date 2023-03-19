@@ -17,7 +17,7 @@ class Trader:
         self.cached_prices = {}
 
         # How many last days to consider when calculating the average prices
-        self.last_days = 150
+        self.last_days = {'BANANAS': 14, 'PEARLS':100}
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         """
@@ -35,7 +35,7 @@ class Trader:
 
             prod_position = 0 if product not in state.position.keys() else state.position[product]
             # skip product if not enough data
-            if len(self.cached_prices[product]) < self.last_days:
+            if len(self.cached_prices[product]) < self.last_days[product]:
                 print(f"Skipping {len(self.cached_prices[product])}")
                 continue
 
@@ -127,20 +127,31 @@ class Trader:
         # values = np.array([x[1] for x in relevant_prices])
         # quantities = np.abs(np.array([x[0] for x in relevant_prices]))
 
-        relevant_prices = self.cached_prices[product][-self.last_days:]
+        days = self.last_days[product]
 
-        # print(relevant_prices)
+        if product == 'BANANAS':
 
-        days_prices = []
+            relevant_prices = self.cached_prices[product][-days:]
 
-        for day in relevant_prices:
-            days_prices.append(np.average([x[1] for x in day], weights=[x[0] for x in day]))
+            # print(relevant_prices)
 
-        x = np.arange(0, self.last_days)
-        y = np.array(days_prices)
-        z = np.polyfit(x, y, 5)
+            days_prices = []
 
-        p = np.poly1d(z)
-        acceptable = p(self.last_days)
+            for day in relevant_prices:
+                days_prices.append(np.average([x[1] for x in day], weights=[x[0] for x in day]))
 
-        return acceptable
+            x = np.arange(0, days)
+            y = np.array(days_prices)
+            z = np.polyfit(x, y, 1)
+
+            p = np.poly1d(z)
+            acceptable = p(days)
+
+            return acceptable
+        
+        else:
+            relevant_prices = list(chain(*(self.cached_prices[product][-days:])))
+            values = np.array([x[1] for x in relevant_prices])
+            quantities = np.abs(np.array([x[0] for x in relevant_prices]))
+
+            return np.average(values, weights=quantities)
