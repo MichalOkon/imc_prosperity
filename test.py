@@ -7,13 +7,13 @@ listings = {
     "PEARLS": Listing(
         symbol="PEARLS",
         product="PEARLS",
-        denomination= "SEASHELLS"
-),
-"BANANAS": Listing(
-    symbol="BANANAS",
-    product="BANANAS",
-    denomination= "SEASHELLS"
-),
+        denomination="SEASHELLS"
+    ),
+    "BANANAS": Listing(
+        symbol="BANANAS",
+        product="BANANAS",
+        denomination="SEASHELLS"
+    ),
 }
 
 order_depths = {
@@ -51,14 +51,14 @@ market_trades = {
             timestamp=900
         )
     ],
-    "BANANAS": [        Trade(
-            symbol="BANANAS",
-            price=140,
-            quantity=6,
-            buyer="",
-            seller="",
-            timestamp=900
-        )]
+    "BANANAS": [Trade(
+        symbol="BANANAS",
+        price=140,
+        quantity=6,
+        buyer="",
+        seller="",
+        timestamp=900
+    )]
 }
 
 position = {

@@ -1,6 +1,6 @@
 import json
-from typing import Dict, List
 from json import JSONEncoder
+from typing import Dict, List
 
 Time = int
 Symbol = str

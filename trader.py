@@ -2,10 +2,12 @@
 # 1. The "datamodel" imports at the top. Using the typing library is optional.
 # 2. A class called "Trader", this class name should not be changed.
 # 3. A run function that takes a tradingstate as input and outputs a "result" dict.
-from itertools import chain
+from itertools import chain  # TODO: check if we can use this
 from typing import Dict, List
-from datamodel import OrderDepth, TradingState, Order
+
 import numpy as np
+
+from datamodel import OrderDepth, TradingState, Order, Trade
 
 MAX_POS = 20
 
@@ -39,7 +41,7 @@ class Trader:
             if product == "BANANAS":
                 continue
 
-            prod_position = 0 if product not in state.position.keys() else state.position[product]
+            prod_position = state.position[product] if product in state.position.keys() else 0
             # skip product if not enough data
             if len(self.cached_prices[product]) < self.last_days:
                 print(f"Skipping {len(self.cached_prices[product])}")
@@ -55,7 +57,7 @@ class Trader:
             acceptable_price = self.calculate_price(product)
 
             print(f"acceptable price for {product}: {acceptable_price}")
-            # If statement checks if there are any SELL orders
+            # Check if there are any SELL orders
             if len(order_depth.sell_orders) > 0:
 
                 # Sort all the available sell orders by their price,
@@ -120,7 +122,7 @@ class Trader:
             # Depending on the logic above
         return result
 
-    def cache_prices(self, state):
+    def cache_prices(self, state: TradingState) -> None:
         # Caches prices of bought and sold products
 
         market_trades = state.market_trades
@@ -130,21 +132,17 @@ class Trader:
 
             if product not in self.cached_prices.keys():
                 self.cached_prices[product] = []
-            prod_trades = []
-            if product in own_trades.keys():
-                prod_trades = prod_trades + own_trades[product]
-            if product in market_trades.keys():
-                prod_trades = prod_trades + market_trades[product]
-            if len(prod_trades) == 0:
-                continue
 
-            prices = [(trade.quantity, trade.price) for trade in prod_trades]
-            self.cached_prices[product].append(prices)
+            prod_trades: List[Trade] = own_trades.get(product, []) + market_trades.get(product, [])
+
+            if len(prod_trades) > 0:
+                prices = [(trade.quantity, trade.price) for trade in prod_trades]
+                self.cached_prices[product].append(prices)
 
     def calculate_price(self, product):
         # Calculate average price of a product
         relevant_prices = list(chain(*(self.cached_prices[product][-self.last_days:])))
-        values = np.array([x[1] for x in relevant_prices])
+        prices = np.array([x[1] for x in relevant_prices])
         quantities = np.abs(np.array([x[0] for x in relevant_prices]))
 
-        return np.average(values, weights=quantities)
+        return np.average(prices, weights=quantities)
