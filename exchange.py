@@ -24,8 +24,8 @@ def simulate(trader):
 
     for _, row in df_prices.iterrows():
         time = row["timestamp"]
-        # if time >= 200000:
-        #     break
+        if time >= 200000:
+            break
 
         product = row["product"]
         if product not in state.position:
@@ -107,16 +107,16 @@ def simulate(trader):
 
         for product in state.position:
             if abs(state.position[product]) > 20:
-                print(f"Position limit for {product} violated")
-                raise RuntimeError()
+                raise RuntimeError(f"Position limit for {product} violated - {state.position[product]}")
 
-        pnl = cash + sum(state.position[product] * last_prices[product] if product in last_prices else 0 for product in state.position)
-        print(time, pnl)
+        position_values = [state.position.get(x, 0) * prices[x][-1] if len(prices[x]) > 0 else 0 for x in prices.keys()]
+        pnl = cash + sum(position_values)
+        print(time, pnl, (cash, state.position))
         historical_penal.append(pnl)
         state.timestamp = time
 
     print(pnl, (cash, state.position))
-    plt.plot(historical_penal)
+    plt.plot(df_prices["timestamp"][:4000], historical_penal)
     plt.show()
 
     plt.plot(prices["PEARLS"])
