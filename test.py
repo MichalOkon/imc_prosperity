@@ -1,5 +1,6 @@
 from datamodel import Listing, OrderDepth, Trade, TradingState
 from trader import Trader
+from goldenCrossTrader import GoldenCrossTrader
 
 timestamp = 1000
 
@@ -78,5 +79,10 @@ state = TradingState(
     position=position
 )
 
-trader = Trader()
+trader = GoldenCrossTrader()
 trader.run(state)
+trader.run(state)
+trader.run(state)
+trader.run(state)
+trader.run(state)
+
