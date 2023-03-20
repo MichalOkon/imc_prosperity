@@ -29,8 +29,8 @@ class Trader:
         Only method required. It takes all buy and sell orders for all symbols as an input,
         and outputs a list of orders to be sent
         """
-        print(
-            f"timestamp: {state.timestamp}, listings: {state.listings}, order_depths: {state.order_depths}, own_trades: {state.own_trades}, market_trades: {state.market_trades}, position: {state.position}, observations: {state.observations}")
+        # print(
+        #     f"timestamp: {state.timestamp}, listings: {state.listings}, order_depths: {state.order_depths}, own_trades: {state.own_trades}, market_trades: {state.market_trades}, position: {state.position}, observations: {state.observations}")
         self.cache_prices(state)
         # Initialize the method output dict as an empty dict
         result = {}
@@ -44,7 +44,7 @@ class Trader:
             prod_position = state.position[product] if product in state.position.keys() else 0
             # skip product if not enough data
             if len(self.cached_prices[product]) < self.last_days:
-                print(f"Skipping {len(self.cached_prices[product])}")
+                # print(f"Skipping {len(self.cached_prices[product])}")
                 continue
 
             # Retrieve the Order Depth containing all the market BUY and SELL orders
@@ -56,7 +56,7 @@ class Trader:
             # Define a fair value
             acceptable_price = self.calculate_price(product)
 
-            print(f"acceptable price for {product}: {acceptable_price}")
+            # print(f"acceptable price for {product}: {acceptable_price}")
             # Check if there are any SELL orders
             if len(order_depth.sell_orders) > 0:
 
@@ -76,16 +76,16 @@ class Trader:
                         # The code below therefore sends a BUY order at the price level of the ask,
                         # with the same quantity
                         # We expect this order to trade with the sell order
-                        print("BUY", str(-best_ask_volume) + "x", product, best_asks[i])
+                        # print("BUY", str(-best_ask_volume) + "x", product, best_asks[i])
                         orders.append(Order(product, best_asks[i], -best_ask_volume))
                         prod_position += -best_ask_volume
                     else:
                         # Buy as much as we can without exceeding the MAX_POS
-                        print(f"exceeding max pos for {product} in selling")
+                        # print(f"exceeding max pos for {product} in selling")
                         vol = MAX_POS - prod_position
-                        print(f"buying {vol} of {product}")
+                        # print(f"buying {vol} of {product}")
                         orders.append(Order(product, best_asks[i], vol))
-                        print(f"exceeding max pos for {product} in buying")
+                        # print(f"exceeding max pos for {product} in buying")
                         prod_position += vol
                     i += 1
 
@@ -102,15 +102,15 @@ class Trader:
                         break
                     best_bid_volume = order_depth.buy_orders[best_bids[i]]
                     if prod_position - best_bid_volume >= -MAX_POS:
-                        print("SELL", str(best_bid_volume) + "x", product, best_bids[i])
+                        # print("SELL", str(best_bid_volume) + "x", product, best_bids[i])
                         orders.append(Order(product, best_bids[i], -best_bid_volume))
                         prod_position += -best_bid_volume
 
                     else:
                         # Sell as much as we can without exceeding the MAX_POS
-                        print(f"exceeding max pos for {product} in selling")
+                        # print(f"exceeding max pos for {product} in selling")
                         vol = prod_position + MAX_POS
-                        print(f"selling {vol} of {product}")
+                        # print(f"selling {vol} of {product}")
                         orders.append(Order(product, best_bids[i], -vol))
                         prod_position += -vol
                     i += 1
