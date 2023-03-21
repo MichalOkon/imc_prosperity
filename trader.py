@@ -3,7 +3,6 @@
 # 2. A class called "Trader", this class name should not be changed.
 # 3. A run function that takes a tradingstate as input and outputs a "result" dict.
 import json
-from itertools import chain  # TODO: check if we can use this
 from typing import Dict, List, Any
 
 import numpy as np
@@ -48,7 +47,7 @@ class Trader:
 
         # How many last days to consider when calculating the average prices
         self.last_days = 100
-        self.banana_days = 5
+        self.banana_days = 2
         # How many of the best bids/asks we should consider
         self.trade_count = 2
 
@@ -246,7 +245,10 @@ class Trader:
 
     def calculate_price(self, product):
         # Calculate average price of a product
-        relevant_prices = list(chain(*(self.cached_prices[product][-self.last_days:])))
+        relevant_prices = []
+        for day_prices in self.cached_prices[product][-self.last_days:]:
+            for price in day_prices:
+                relevant_prices.append(price)
         prices = np.array([x[1] for x in relevant_prices])
         quantities = np.abs(np.array([x[0] for x in relevant_prices]))
 
