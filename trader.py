@@ -2,14 +2,41 @@
 # 1. The "datamodel" imports at the top. Using the typing library is optional.
 # 2. A class called "Trader", this class name should not be changed.
 # 3. A run function that takes a tradingstate as input and outputs a "result" dict.
+import json
 from itertools import chain  # TODO: check if we can use this
-from typing import Dict, List
+from typing import Dict, List, Any
 
 import numpy as np
 
-from datamodel import OrderDepth, TradingState, Order, Trade
+from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, ProsperityEncoder
 
 MAX_POS = 20
+
+
+class Logger:
+    def __init__(self) -> None:
+        self.logs = ""
+
+    def print(self, *objects: Any, sep: str = " ", end: str = "\n") -> None:
+        self.logs += sep.join(map(str, objects)) + end
+
+    def flush(self, state: TradingState, orders: Dict[Symbol, List[Order]]) -> None:
+        logs = self.logs
+        if logs.endswith("\n"):
+            logs = logs[:-1]
+
+        print(json.dumps({
+            "state": state,
+            "orders": orders,
+            "logs": logs,
+        }, cls=ProsperityEncoder, separators=(",", ":"), sort_keys=True))
+
+        self.state = None
+        self.orders = {}
+        self.logs = ""
+
+
+logger = Logger()
 
 
 class Trader:
@@ -29,8 +56,8 @@ class Trader:
         Only method required. It takes all buy and sell orders for all symbols as an input,
         and outputs a list of orders to be sent
         """
-        # print(
-        #     f"timestamp: {state.timestamp}, listings: {state.listings}, order_depths: {state.order_depths}, own_trades: {state.own_trades}, market_trades: {state.market_trades}, position: {state.position}, observations: {state.observations}")
+        logger.print(
+            f"timestamp: {state.timestamp}, listings: {state.listings}, order_depths: {state.order_depths}, own_trades: {state.own_trades}, market_trades: {state.market_trades}, position: {state.position}, observations: {state.observations}")
         self.cache_prices(state)
         # Initialize the method output dict as an empty dict
         result = {}
@@ -44,7 +71,7 @@ class Trader:
             prod_position = state.position[product] if product in state.position.keys() else 0
             # skip product if not enough data
             if len(self.cached_prices[product]) < self.last_days:
-                # print(f"Skipping {len(self.cached_prices[product])}")
+                logger.print(f"Skipping {len(self.cached_prices[product])}")
                 continue
 
             # Retrieve the Order Depth containing all the market BUY and SELL orders
@@ -56,7 +83,7 @@ class Trader:
             # Define a fair value
             acceptable_price = self.calculate_price(product)
 
-            # print(f"acceptable price for {product}: {acceptable_price}")
+            logger.print(f"acceptable price for {product}: {acceptable_price}")
             # Check if there are any SELL orders
             if len(order_depth.sell_orders) > 0:
 
@@ -76,16 +103,16 @@ class Trader:
                         # The code below therefore sends a BUY order at the price level of the ask,
                         # with the same quantity
                         # We expect this order to trade with the sell order
-                        # print("BUY", str(-best_ask_volume) + "x", product, best_asks[i])
+                        logger.print("BUY", str(-best_ask_volume) + "x", product, best_asks[i])
                         orders.append(Order(product, best_asks[i], -best_ask_volume))
                         prod_position += -best_ask_volume
                     else:
                         # Buy as much as we can without exceeding the MAX_POS
-                        # print(f"exceeding max pos for {product} in selling")
+                        logger.print(f"exceeding max pos for {product} in selling")
                         vol = MAX_POS - prod_position
-                        # print(f"buying {vol} of {product}")
+                        logger.print(f"buying {vol} of {product}")
                         orders.append(Order(product, best_asks[i], vol))
-                        # print(f"exceeding max pos for {product} in buying")
+                        logger.print(f"exceeding max pos for {product} in buying")
                         prod_position += vol
                     i += 1
 
@@ -102,15 +129,15 @@ class Trader:
                         break
                     best_bid_volume = order_depth.buy_orders[best_bids[i]]
                     if prod_position - best_bid_volume >= -MAX_POS:
-                        # print("SELL", str(best_bid_volume) + "x", product, best_bids[i])
+                        logger.print("SELL", str(best_bid_volume) + "x", product, best_bids[i])
                         orders.append(Order(product, best_bids[i], -best_bid_volume))
                         prod_position += -best_bid_volume
 
                     else:
                         # Sell as much as we can without exceeding the MAX_POS
-                        # print(f"exceeding max pos for {product} in selling")
+                        logger.print(f"exceeding max pos for {product} in selling")
                         vol = prod_position + MAX_POS
-                        # print(f"selling {vol} of {product}")
+                        logger.print(f"selling {vol} of {product}")
                         orders.append(Order(product, best_bids[i], -vol))
                         prod_position += -vol
                     i += 1
@@ -120,6 +147,7 @@ class Trader:
 
             # Return the dict of orders
             # Depending on the logic above
+        logger.flush(state, result)
         return result
 
     def cache_prices(self, state: TradingState) -> None:
