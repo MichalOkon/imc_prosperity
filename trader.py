@@ -136,6 +136,12 @@ class Trader:
                             prod_position += -vol
                         i += 1
 
+                # Add some new orders on our own with very profitable prices hoping some stupid bots fill them
+                if prod_position < MAX_POS and  orig_position < MAX_POS:
+                    orders.append(Order(product, avg_bid - 4, 1))
+                if prod_position > -MAX_POS and  orig_position > -MAX_POS:
+                    orders.append(Order(product, avg_ask + 4, -1))
+
             else:
                 # Define a fair value
                 acceptable_price = PEARLS_PRICE
@@ -176,7 +182,6 @@ class Trader:
                             prod_position += vol
                             new_buy_orders += vol
                         i += 1
-
                 # The below code block is similar to the one above,
                 # the difference is that it finds the highest bid (buy order)
                 # If the price of the order is higher than the fair value
@@ -205,6 +210,7 @@ class Trader:
                             new_sell_orders += vol
                         i += 1
 
+                # Add some new orders on our own with very profitable prices hoping some stupid bots fill them
                 if prod_position < MAX_POS and  orig_position < MAX_POS and  orig_position + new_buy_orders < MAX_POS:
                     orders.append(Order(product, acceptable_price - 4, 1))
                 if prod_position > -MAX_POS and  orig_position > -MAX_POS and orig_position - new_sell_orders > -MAX_POS:
