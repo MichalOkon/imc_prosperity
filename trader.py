@@ -9,6 +9,7 @@ import numpy as np
 
 from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, ProsperityEncoder
 
+ORDER_LIMIT = 20
 MAX_POS = 20
 PEARLS_PRICE = 10000
 
@@ -70,8 +71,8 @@ class Trader:
         # Iterate over all the keys (the available products) contained in the order depths
         for product in state.order_depths.keys():
 
-            prod_position = state.position[product] if product in state.position.keys() else 0
-
+            orig_position = state.position[product] if product in state.position.keys() else 0
+            prod_position = orig_position
             # Retrieve the Order Depth containing all the market BUY and SELL orders
             order_depth: OrderDepth = state.order_depths[product]
 
@@ -140,6 +141,9 @@ class Trader:
                 acceptable_price = PEARLS_PRICE
                 logger.print(f"acceptable price for {product}: {acceptable_price}")
                 # Check if there are any SELL orders
+
+                new_buy_orders = 0
+                new_sell_orders = 0
                 if len(order_depth.sell_orders) > 0:
 
                     # Sort all the available sell orders by their price,
@@ -149,7 +153,7 @@ class Trader:
                     # Check if the lowest ask (sell order) is lower than the above defined fair value
                     i = 0
                     while i < self.trade_count and best_asks[i] < acceptable_price:
-                        if prod_position == MAX_POS:
+                        if prod_position == MAX_POS or new_buy_orders == 20:
                             break
                         best_ask_volume = order_depth.sell_orders[best_asks[i]]
                         if prod_position - best_ask_volume <= MAX_POS:
@@ -161,6 +165,7 @@ class Trader:
                             logger.print("BUY", str(-best_ask_volume) + "x", product, best_asks[i])
                             orders.append(Order(product, best_asks[i], -best_ask_volume))
                             prod_position += -best_ask_volume
+                            new_buy_orders += -best_ask_volume
                         else:
                             # Buy as much as we can without exceeding the MAX_POS
                             logger.print(f"exceeding max pos for {product} in selling")
@@ -169,6 +174,7 @@ class Trader:
                             orders.append(Order(product, best_asks[i], vol))
                             logger.print(f"exceeding max pos for {product} in buying")
                             prod_position += vol
+                            new_buy_orders += vol
                         i += 1
 
                 # The below code block is similar to the one above,
@@ -180,13 +186,14 @@ class Trader:
 
                     i = 0
                     while i < self.trade_count and best_bids[i] > acceptable_price:
-                        if prod_position == -MAX_POS:
+                        if prod_position == -MAX_POS or new_sell_orders == 20:
                             break
                         best_bid_volume = order_depth.buy_orders[best_bids[i]]
                         if prod_position - best_bid_volume >= -MAX_POS:
                             logger.print("SELL", str(best_bid_volume) + "x", product, best_bids[i])
                             orders.append(Order(product, best_bids[i], -best_bid_volume))
                             prod_position += -best_bid_volume
+                            new_sell_orders += best_bid_volume
 
                         else:
                             # Sell as much as we can without exceeding the MAX_POS
@@ -195,9 +202,27 @@ class Trader:
                             logger.print(f"selling {vol} of {product}")
                             orders.append(Order(product, best_bids[i], -vol))
                             prod_position += -vol
+                            new_sell_orders += vol
                         i += 1
 
-                # Add all the above orders to the result dict
+                if prod_position < MAX_POS and  orig_position < MAX_POS and  orig_position + new_buy_orders < MAX_POS:
+                    orders.append(Order(product, acceptable_price - 4, 1))
+                if prod_position > -MAX_POS and  orig_position > -MAX_POS and orig_position - new_sell_orders > -MAX_POS:
+                    orders.append(Order(product, acceptable_price + 4, -1))
+                # print("new sell orders: ", new_sell_orders)
+                # print("new buy orders: ", new_buy_orders)
+                # print("prod position: ", prod_position)
+                # sell_capacity = min(ORDER_LIMIT - new_sell_orders - new_buy_orders, MAX_POS + prod_position)
+                # print("sell capacity: ", sell_capacity)
+                # if sell_capacity > 0:
+                #     orders.append(Order(product, acceptable_price + 5, -sell_capacity))
+                #
+                # buy_capacity =  min(ORDER_LIMIT - new_buy_orders - new_sell_orders, MAX_POS - prod_position)
+                # print("buy capacity: ", buy_capacity)
+                # if buy_capacity > 0:
+                #     orders.append(Order(product, acceptable_price - 5, buy_capacity))
+
+            # Add all the above orders to the result dict
             result[product] = orders
 
             # Return the dict of orders
