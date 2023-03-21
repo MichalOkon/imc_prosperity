@@ -17,7 +17,7 @@ class Trader:
         self.cached_prices = {}
 
         # How many last days to consider when calculating the average prices
-        self.last_days = {'BANANAS': 14, 'PEARLS':100}
+        self.last_days = {'BANANAS': 15, 'PEARLS':0}
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         """
@@ -101,7 +101,7 @@ class Trader:
             # Depending on the logic above
         return result
 
-    def cache_prices(self, state):
+    def cache_prices(self, state: TradingState) -> None:
         # Caches prices of bought and sold products
 
         market_trades = state.market_trades
@@ -111,16 +111,12 @@ class Trader:
 
             if product not in self.cached_prices.keys():
                 self.cached_prices[product] = []
-            prod_trades = []
-            # if product in own_trades.keys():
-            #     prod_trades = prod_trades + own_trades[product]
-            if product in market_trades.keys():
-                prod_trades = prod_trades + market_trades[product]
-            if len(prod_trades) == 0:
-                continue
 
-            prices = [(trade.quantity, trade.price) for trade in prod_trades]
-            self.cached_prices[product].append(prices)
+            prod_trades = own_trades.get(product, []) + market_trades.get(product, [])
+
+            if len(prod_trades) > 0:
+                prices = [(trade.quantity, trade.price) for trade in prod_trades]
+                self.cached_prices[product].append(prices)
 
     def calculate_price(self, product):
         # Calculate average price of a product
@@ -128,11 +124,14 @@ class Trader:
         # values = np.array([x[1] for x in relevant_prices])
         # quantities = np.abs(np.array([x[0] for x in relevant_prices]))
 
-        days = self.last_days[product]
+        if product == 'PEARLS':
+            return 10000, 10000
 
-        days_avg = days
-        if product == 'BANANAS':
-            days_avg = 5
+        days = 5
+
+        days_avg = self.last_days[product]
+        # if product == 'BANANAS':
+        #     days_avg = 5
 
         # if product == 'BANANAS':
 
@@ -170,12 +169,13 @@ class Trader:
         y_hat = p(x)
 
         delta = np.mean(np.abs(y - y_hat))
+        
+        a = 1.8
 
-        if product == 'PEARLS':
-            a = 0
-        else:
-            a = 2
+        delta *= a
 
-        delta = max(a * delta, 2)
+        # delta = max(2, delta)
+
+        # delta = 1
 
         return avg - delta, avg + delta
