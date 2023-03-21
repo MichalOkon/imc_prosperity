@@ -3,7 +3,6 @@
 # 2. A class called "Trader", this class name should not be changed.
 # 3. A run function that takes a tradingstate as input and outputs a "result" dict.
 import json
-from itertools import chain  # TODO: check if we can use this
 from typing import Dict, List, Any
 
 import numpy as np
@@ -46,7 +45,7 @@ class Trader:
         self.cached_prices = {}
 
         # How many last days to consider when calculating the average prices
-        self.last_days = {'BANANAS': 15, 'PEARLS':0}
+        self.last_days = {'BANANAS': 15, 'PEARLS': 0}
 
         # How many of the best bids/asks we should consider
         self.trade_count = 2
@@ -187,20 +186,22 @@ class Trader:
         #     quantities = np.abs(np.array([x[0] for x in relevant_prices]))
 
         #     return np.average(values, weights=quantities)
-        
+
         # else:
         #     relevant_prices = list(chain(*(self.cached_prices[product][-days:])))
         #     values = np.array([x[1] for x in relevant_prices])
         #     quantities = np.abs(np.array([x[0] for x in relevant_prices]))
 
         #     return np.average(values, weights=quantities)
-
-        relevant_prices = list(chain(*(self.cached_prices[product][-days_avg:])))
+        relevant_prices = []
+        for day_prices in self.cached_prices[product][-days_avg:]:
+            for price in day_prices:
+                relevant_prices.append(price)
         values = np.array([x[1] for x in relevant_prices])
         quantities = np.abs(np.array([x[0] for x in relevant_prices]))
 
-        avg =  np.average(values, weights=quantities)
-    
+        avg = np.average(values, weights=quantities)
+
         relevant_prices = self.cached_prices[product][-days:]
 
         days_prices = []
@@ -216,7 +217,7 @@ class Trader:
         y_hat = p(x)
 
         delta = np.mean(np.abs(y - y_hat))
-        
+
         a = 1.8
 
         delta *= a
