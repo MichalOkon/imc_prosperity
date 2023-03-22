@@ -1,5 +1,6 @@
 from datamodel import Listing, OrderDepth, Trade, TradingState
 from trader import Trader
+from ichimoku_trader import IchimokuTrader
 
 timestamp = 1000
 
@@ -78,5 +79,5 @@ state = TradingState(
     position=position
 )
 
-trader = Trader()
+trader = IchimokuTrader()
 trader.run(state)
