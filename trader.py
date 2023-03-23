@@ -9,8 +9,6 @@ import numpy as np
 
 from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, ProsperityEncoder
 
-ORDER_LIMIT = 20
-MAX_POS = 20
 PEARLS_PRICE = 10000
 
 
@@ -52,12 +50,13 @@ class Trader:
         # How many of the best bids/asks we should consider
         self.trade_count = 1
 
-        self.old_asks = {}
-        self.old_bids = {}
+        self.old_asks = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": []}
+        self.old_bids = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": []}
         self.spread = {"BANANAS": 2, "PINA_COLADAS": 1, "COCONUTS": 1}
         self.fill_diff = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 0}
 
         self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600}
+        self.max_own_order = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 10, "COCONUTS": 10}
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         """
@@ -221,10 +220,10 @@ class Trader:
                 #
                 # Add some new orders on our own with very profitable prices hoping some stupid bots fill them
                 mid_price = (avg_bid + avg_ask) / 2
-                orders.append(Order(product, mid_price - self.spread[product], max(0, min(20, self.max_pos[product] - prod_position,
+                orders.append(Order(product, mid_price - self.spread[product], max(0, min(self.max_own_order[product], self.max_pos[product] - prod_position,
                                                                                         self.max_pos[product] - orig_position,
                                                                                         self.max_pos[product] - orig_position - new_buy_orders))))
-                orders.append(Order(product, mid_price + self.spread[product], -max(0, min(20, self.max_pos[product] + prod_position,
+                orders.append(Order(product, mid_price + self.spread[product], -max(0, min(self.max_own_order[product], self.max_pos[product] + prod_position,
                                                                                          self.max_pos[product] + orig_position,
                                                                                          self.max_pos[product] + orig_position - new_sell_orders))))
 
