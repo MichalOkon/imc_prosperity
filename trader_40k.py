@@ -228,49 +228,47 @@ class Trader:
                 diff = self.cached_means[product][-1] - old_mean
 
                 self.mean_diffs[product].append(diff)
-                if len(self.mean_diffs[product]) > 1:
-                    old_diff = self.mean_diffs[product][-2]
-                    if diff < -self.diff_thresh[product] and len(order_depth.sell_orders) != 0:
-                        best_asks = sorted(order_depth.sell_orders.keys())
+                if diff < -self.diff_thresh[product] and len(order_depth.sell_orders) != 0:
+                    best_asks = sorted(order_depth.sell_orders.keys())
 
-                        i = 0
-                        while i < self.trade_count and len(best_asks) > i:
-                            if prod_position == self.max_pos[product]:
-                                break
-                            best_ask_volume = order_depth.sell_orders[best_asks[i]]
-                            if prod_position - best_ask_volume <= self.max_pos[product]:
-                                orders.append(Order(product, best_asks[i], -best_ask_volume))
-                                prod_position += -best_ask_volume
-                                new_buy_orders += -best_ask_volume
-                            else:
-                                # Buy as much as we can without exceeding the self.max_pos[product]
-                                vol = self.max_pos[product] - prod_position
-                                orders.append(Order(product, best_asks[i], vol))
-                                prod_position += vol
-                                new_buy_orders += vol
-                            i += 1
+                    i = 0
+                    while i < self.trade_count and len(best_asks) > i:
+                        if prod_position == self.max_pos[product]:
+                            break
+                        best_ask_volume = order_depth.sell_orders[best_asks[i]]
+                        if prod_position - best_ask_volume <= self.max_pos[product]:
+                            orders.append(Order(product, best_asks[i], -best_ask_volume))
+                            prod_position += -best_ask_volume
+                            new_buy_orders += -best_ask_volume
+                        else:
+                            # Buy as much as we can without exceeding the self.max_pos[product]
+                            vol = self.max_pos[product] - prod_position
+                            orders.append(Order(product, best_asks[i], vol))
+                            prod_position += vol
+                            new_buy_orders += vol
+                        i += 1
 
-                    if diff > self.diff_thresh[product] and len(order_depth.buy_orders) != 0:
-                        best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
+                if diff > self.diff_thresh[product] and len(order_depth.buy_orders) != 0:
+                    best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
 
-                        i = 0
-                        while i < self.trade_count and len(best_bids) > i:
-                            if prod_position == -self.max_pos[product]:
-                                break
-                            best_bid_volume = order_depth.buy_orders[best_bids[i]]
-                            if prod_position - best_bid_volume >= -self.max_pos[product]:
-                                orders.append(Order(product, best_bids[i], -best_bid_volume))
-                                prod_position += -best_bid_volume
-                                new_sell_orders += best_bid_volume
+                    i = 0
+                    while i < self.trade_count and len(best_bids) > i:
+                        if prod_position == -self.max_pos[product]:
+                            break
+                        best_bid_volume = order_depth.buy_orders[best_bids[i]]
+                        if prod_position - best_bid_volume >= -self.max_pos[product]:
+                            orders.append(Order(product, best_bids[i], -best_bid_volume))
+                            prod_position += -best_bid_volume
+                            new_sell_orders += best_bid_volume
 
-                            else:
-                                # Sell as much as we can without exceeding the self.max_pos[product]
-                                vol = prod_position + self.max_pos[product]
-                                orders.append(Order(product, best_bids[i], -vol))
-                                prod_position += -vol
-                                new_sell_orders += vol
+                        else:
+                            # Sell as much as we can without exceeding the self.max_pos[product]
+                            vol = prod_position + self.max_pos[product]
+                            orders.append(Order(product, best_bids[i], -vol))
+                            prod_position += -vol
+                            new_sell_orders += vol
 
-                            i += 1
+                        i += 1
 
             if product == "COCONUTS":
 
