@@ -22,9 +22,9 @@ class Trader:
         # How many last days to consider when calculating the average prices
         self.last_days = 100
         self.banana_days = 2
-        self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1}
-        self.derivative_resolution = {"PINA_COLADAS": 10, "COCONUTS": 10}  # best 10
-        self.diff_thresh = {"PINA_COLADAS": 20, "COCONUTS": 5}  # best 20 pina, 5 coco
+        self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1,"BERRIES": 1,"DOLPHIN_SIGHTINGS": 1}
+        self.derivative_resolution = {"PINA_COLADAS": 10, "COCONUTS": 10, "DIVING_GEAR": 10,"BERRIES": 10,"DOLPHIN_SIGHTINGS": 10}  # best 10
+        self.diff_thresh = {"PINA_COLADAS": 20, "COCONUTS": 5, "DIVING_GEAR": 10,"BERRIES": 10,"DOLPHIN_SIGHTINGS": 10}  # best 20 pina, 5 coco
         # How many of the best bids/asks we should consider
         self.trade_count = 1
 
@@ -204,7 +204,7 @@ class Trader:
                                                 self.max_pos[product] + orig_position,
                                                 self.max_pos[product] + orig_position - new_sell_orders))))
 
-            if product == "PINA_COLADAS" or product == "COCONUTS":
+            if  product != "BANANAS" and product != "PINA_COLADAS" and (product == "PINA_COLADAS" or product == "COCONUTS" or product == "DIVING_GEAR" or "MAYBERRIES" or "DOLPHIN_SIGHTINGS"):
                 self.cache_pearl_prices(state)
                 self.calculate_means(product)
 
