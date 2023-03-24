@@ -48,8 +48,8 @@ class Trader:
         # How many last days to consider when calculating the average prices
         self.last_days = 100
         self.banana_days = 2
-        self.mean_days = {"PINA_COLADAS":50, "COCONUTS":50}
-        self.derivative_resolution = {"PINA_COLADAS":100, "COCONUTS":100}
+        self.mean_days = {"PINA_COLADAS": 15, "COCONUTS": 50}
+        self.derivative_resolution = {"PINA_COLADAS": 60, "COCONUTS": 100}
 
         # How many of the best bids/asks we should consider
         self.trade_count = 1
@@ -245,18 +245,25 @@ class Trader:
                 self.cache_pearl_prices(state)
                 self.calculate_means(product)
 
-                if product == "COCONUTS":
-                    if len(self.cached_means[product]) < self.derivative_resolution[product] + 2:
-                        old_mean = self.cached_means[product][0]
-                    else:
-                        old_mean = np.mean(self.cached_means[product][-self.derivative_resolution[product]:-1])
-                    diff = self.cached_means[product][-1] - old_mean
+                # if product == "COCONUTS":
+                #     if len(self.cached_means[product]) < self.derivative_resolution[product] + 2:
+                #         old_mean = self.cached_means[product][0]
+                #     else:
+                #         old_mean = np.mean(self.cached_means[product][-self.derivative_resolution[product]:-1])
+                #     diff = self.cached_means[product][-1] - old_mean
+                # else:
+                #     if len(self.cached_means[product]) < self.derivative_resolution[product] + 1:
+                #         old_mean = self.cached_means[product][0]
+                #     else:
+                #         old_mean = self.cached_means[product][-self.derivative_resolution[product]]
+                #     diff = self.cached_means[product][-1] - old_mean
+
+                
+                if len(self.cached_means[product]) < self.derivative_resolution[product] + 1:
+                    old_mean = self.cached_means[product][0]
                 else:
-                    if len(self.cached_means[product]) < self.derivative_resolution[product] + 1:
-                        old_mean = self.cached_means[product][0]
-                    else:
-                        old_mean = self.cached_means[product][-self.derivative_resolution[product]]
-                    diff = self.cached_means[product][-1] - old_mean
+                    old_mean = self.cached_means[product][-self.derivative_resolution[product]]
+                diff = self.cached_means[product][-1] - old_mean
 
                 self.mean_diffs[product].append(diff)
                 if len(self.mean_diffs[product]) > 1:
