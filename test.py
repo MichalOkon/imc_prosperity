@@ -1,5 +1,5 @@
 from datamodel import Listing, OrderDepth, Trade, TradingState
-from trader import Trader
+from trader_40k import Trader
 
 timestamp = 1000
 

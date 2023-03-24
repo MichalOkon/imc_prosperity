@@ -2,7 +2,8 @@
 # 1. The "datamodel" imports at the top. Using the typing library is optional.
 # 2. A class called "Trader", this class name should not be changed.
 # 3. A run function that takes a tradingstate as input and outputs a "result" dict.
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
+import json
 
 import numpy as np
 
@@ -10,6 +11,31 @@ from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, Prosperity
 
 PEARLS_PRICE = 10000
 
+
+class Logger:
+    def __init__(self) -> None:
+        self.logs = ""
+
+    def print(self, *objects: Any, sep: str = " ", end: str = "\n") -> None:
+        self.logs += sep.join(map(str, objects)) + end
+
+    def flush(self, state: TradingState, orders: Dict[Symbol, List[Order]]) -> None:
+        logs = self.logs
+        if logs.endswith("\n"):
+            logs = logs[:-1]
+
+        print(json.dumps({
+            "state": state,
+            "orders": orders,
+            "logs": logs,
+        }, cls=ProsperityEncoder, separators=(",", ":"), sort_keys=True))
+
+        self.state = None
+        self.orders = {}
+        self.logs = ""
+
+
+logger = Logger()
 
 
 class Trader:
@@ -22,9 +48,9 @@ class Trader:
         # How many last days to consider when calculating the average prices
         self.last_days = 100
         self.banana_days = 2
-        self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1,"BERRIES": 1,"DOLPHIN_SIGHTINGS": 1}
-        self.derivative_resolution = {"PINA_COLADAS": 10, "COCONUTS": 10, "DIVING_GEAR": 10,"BERRIES": 10,"DOLPHIN_SIGHTINGS": 10}  # best 10
-        self.diff_thresh = {"PINA_COLADAS": 20, "COCONUTS": 5, "DIVING_GEAR": 10,"BERRIES": 10,"DOLPHIN_SIGHTINGS": 10}  # best 20 pina, 5 coco
+        self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1,"BERRIES": 1}
+        self.derivative_resolution = {"PINA_COLADAS": 10, "COCONUTS": 10, "DIVING_GEAR": 10,"BERRIES": 10}  # best 10
+        self.diff_thresh = {"PINA_COLADAS": 20, "COCONUTS": 5, "DIVING_GEAR": 10,"BERRIES": 10}  # best 20 pina, 5 coco
         # How many of the best bids/asks we should consider
         self.trade_count = 1
 
@@ -32,10 +58,10 @@ class Trader:
         self.old_bids = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": []}
         self.spread = {"BANANAS": 2, "PINA_COLADAS": 1, "COCONUTS": 2}
         self.fill_diff = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3}
-        self.mean_diffs = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": []}
+        self.mean_diffs = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": [], "DIVING_GEAR": [], "BERRIES": []}
 
-        self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600}
-        self.max_own_order = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 10, "COCONUTS": 300}
+        self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600, "DIVING_GEAR": 50, "BERRIES": 250}
+        self.max_own_order = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 10, "COCONUTS": 300, "DIVING_GEAR": 25, "BERRIES": 125}
 
         self.pina_means = []
         self.coco_stds = []
@@ -204,7 +230,7 @@ class Trader:
                                                 self.max_pos[product] + orig_position,
                                                 self.max_pos[product] + orig_position - new_sell_orders))))
 
-            if  product != "BANANAS" and product != "PINA_COLADAS" and (product == "PINA_COLADAS" or product == "COCONUTS" or product == "DIVING_GEAR" or "MAYBERRIES" or "DOLPHIN_SIGHTINGS"):
+            if  product == "PINA_COLADAS" or product == "COCONUTS" or product == "DIVING_GEAR" or product == "BERRIES":
                 self.cache_pearl_prices(state)
                 self.calculate_means(product)
 
@@ -367,6 +393,7 @@ class Trader:
 
             # Return the dict of orders
             # Depending on the logic above
+        logger.flush(state, result)
         return result
 
     def cache_prices(self, state: TradingState) -> None:
@@ -381,7 +408,7 @@ class Trader:
             self.old_asks[product].append(sell_orders)
             self.old_bids[product].append(buy_orders)
 
-    def calculate_prices(self, product, days: int) -> (int, int):
+    def calculate_prices(self, product, days: int) -> Tuple[int, int]:
         relevant_bids = []
         for bids in self.old_bids[product][-days:]:
             relevant_bids.extend([(value, bids[value]) for value in bids])
@@ -394,7 +421,7 @@ class Trader:
 
         return avg_bid, avg_ask
 
-    def calculate_stds(self, product, days: int) -> (int, int):
+    def calculate_stds(self, product, days: int) -> Tuple[int, int]:
         relevant_bids = []
         for bids in self.old_bids[product][-days:]:
             relevant_bids.extend([(value, bids[value]) for value in bids])
