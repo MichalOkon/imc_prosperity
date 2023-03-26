@@ -3,39 +3,12 @@
 # 2. A class called "Trader", this class name should not be changed.
 # 3. A run function that takes a tradingstate as input and outputs a "result" dict.
 from typing import Dict, List, Any, Tuple
-import json
 
 import numpy as np
 
 from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, ProsperityEncoder
 
 PEARLS_PRICE = 10000
-
-
-class Logger:
-    def __init__(self) -> None:
-        self.logs = ""
-
-    def print(self, *objects: Any, sep: str = " ", end: str = "\n") -> None:
-        self.logs += sep.join(map(str, objects)) + end
-
-    def flush(self, state: TradingState, orders: Dict[Symbol, List[Order]]) -> None:
-        logs = self.logs
-        if logs.endswith("\n"):
-            logs = logs[:-1]
-
-        print(json.dumps({
-            "state": state,
-            "orders": orders,
-            "logs": logs,
-        }, cls=ProsperityEncoder, separators=(",", ":"), sort_keys=True))
-
-        self.state = None
-        self.orders = {}
-        self.logs = ""
-
-
-logger = Logger()
 
 
 class Trader:
@@ -102,12 +75,9 @@ class Trader:
                     self.old_dolphins = state.observations["DOLPHIN_SIGHTINGS"]
                     continue
                 if  state.observations["DOLPHIN_SIGHTINGS"] - self.old_dolphins > 10:
-                    print("Dolphins spotted")
                     self.dolphins_spotted = True
                     self.dolphins_spotted_timestamp = state.timestamp
-                    print("update")
                 if state.observations["DOLPHIN_SIGHTINGS"] - self.old_dolphins < -10:
-                    print("Dolphins gone")
                     self.dolphins_gone = True
                     self.dolphins_gone_timestamp = state.timestamp
                 self.old_dolphins = state.observations["DOLPHIN_SIGHTINGS"]
@@ -134,7 +104,6 @@ class Trader:
 
                         i = 0
                         while i < self.trade_count and len(best_asks) > i:
-                            print(f"buying berries at {best_asks}")
                             if prod_position == self.max_pos[product]:
                                 break
                             best_ask_volume = order_depth.sell_orders[best_asks[i]]
@@ -155,7 +124,6 @@ class Trader:
 
                         i = 0
                         while i < self.trade_count and len(best_bids) > i:
-                            print(f"selling berries at {best_bids}")
                             if prod_position == -self.max_pos[product]:
                                 break
                             best_bid_volume = order_depth.buy_orders[best_bids[i]]
@@ -180,7 +148,6 @@ class Trader:
 
                         i = 0
                         while i < self.trade_count and len(best_asks) > i:
-                            print(f"buying sour berries at {best_asks}")
                             if prod_position == self.max_pos[product]:
                                 break
                             best_ask_volume = order_depth.sell_orders[best_asks[i]]
@@ -206,7 +173,6 @@ class Trader:
 
                         i = 0
                         while i < self.trade_count and len(best_asks) > i:
-                            print(f"buying {product} at {best_asks}")
                             if prod_position == self.max_pos[product]:
                                 break
                             best_ask_volume = order_depth.sell_orders[best_asks[i]]
@@ -226,10 +192,8 @@ class Trader:
                     # start selling gear if dolphins are going away
                     if len(order_depth.buy_orders) != 0:
                         best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
-                        print("in")
                         i = 0
                         while i < self.trade_count and len(best_bids) > i:
-                            print(f"selling {product} at {best_bids}")
 
                             if prod_position == -self.max_pos[product]:
                                 break
@@ -254,7 +218,6 @@ class Trader:
 
                         i = 0
                         while i < self.trade_count and len(best_bids) > i:
-                            print(f"selling late {product} at {best_bids}")
                             if prod_position == -self.max_pos[product]:
                                 break
                             best_bid_volume = order_depth.buy_orders[best_bids[i]]
@@ -273,7 +236,6 @@ class Trader:
                             i += 1
                     if state.timestamp - self.dolphins_spotted_timestamp - self.gear_timestamp_diff > self.dolphin_action_time:
                         self.dolphins_spotted = False
-                        print("Dolphins spotted off")
 
                 if self.dolphins_gone and state.timestamp - self.dolphins_gone_timestamp > self.gear_timestamp_diff:
                     # Start buying after dolphins have been gone for long enough
@@ -282,7 +244,6 @@ class Trader:
 
                         i = 0
                         while i < self.trade_count and len(best_asks) > i:
-                            print(f"buying late {product} at {best_asks}")
                             if prod_position == self.max_pos[product]:
                                 break
                             best_ask_volume = order_depth.sell_orders[best_asks[i]]
@@ -299,11 +260,9 @@ class Trader:
                             i += 1
                     if state.timestamp - self.dolphins_gone_timestamp - self.gear_timestamp_diff > self.dolphin_action_time:
                         self.dolphins_gone = False
-                        print("Dolphins gone off")
 
 
             if product == "PEARLS":
-                self.cache_pearl_prices(state)
                 # Define a fair value
                 acceptable_price = PEARLS_PRICE
                 # Check if there are any SELL orders
@@ -427,20 +386,20 @@ class Trader:
                         i += 1
                 #
                 # Add some new orders on our own with very profitable prices hoping some stupid bots fill them
-                mid_price = (avg_bid + avg_ask) / 2
-                orders.append(Order(product, mid_price - self.spread[product],
-                                    max(0, min(self.max_own_order[product], self.max_pos[product] - prod_position,
-                                               self.max_pos[product] - orig_position,
-                                               self.max_pos[product] - orig_position - new_buy_orders))))
-                orders.append(Order(product, mid_price + self.spread[product],
-                                    -max(0, min(self.max_own_order[product], self.max_pos[product] + prod_position,
-                                                self.max_pos[product] + orig_position,
-                                                self.max_pos[product] + orig_position - new_sell_orders))))
+                if avg_bid == avg_bid and avg_ask == avg_ask:
+                    mid_price = (avg_bid + avg_ask) / 2
+                    orders.append(Order(product, mid_price - self.spread[product],
+                                        max(0, min(self.max_own_order[product], self.max_pos[product] - prod_position,
+                                                   self.max_pos[product] - orig_position,
+                                                   self.max_pos[product] - orig_position - new_buy_orders))))
+                    orders.append(Order(product, mid_price + self.spread[product],
+                                        -max(0, min(self.max_own_order[product], self.max_pos[product] + prod_position,
+                                                    self.max_pos[product] + orig_position,
+                                                    self.max_pos[product] + orig_position - new_sell_orders))))
 
             if  product == "PINA_COLADAS" or product == "COCONUTS" or (product == "DIVING_GEAR" and not self.dolphins_spotted and not self.dolphins_gone):
                 self.calculate_means(product)
 
-                print('normal op')
                 # if product == "COCONUTS":
                 #     if len(self.cached_means[product]) < self.derivative_resolution[product] + 2:
                 #         old_mean = self.cached_means[product][0]
@@ -599,7 +558,6 @@ class Trader:
 
             # Return the dict of orders
             # Depending on the logic above
-        logger.flush(state, result)
         return result
 
     def cache_prices(self, state: TradingState) -> None:
