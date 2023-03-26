@@ -1,11 +1,7 @@
 import pandas as pd
-from typing import Dict, List, Any, Tuple
-
-import numpy as np
-
-from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, ProsperityEncoder
 from datamodel import Listing, OrderDepth, Trade, TradingState
 
+from matplotlib import pyplot as plt
 
 class Simulator():
     def __init__(self, prices_round: str, trades_round: str, trader):
@@ -19,7 +15,7 @@ class Simulator():
             self.position[symbol] = 0
 
         self.money_profit = {}
-        self.total_pnl = []
+        self.total_pnl = {}
 
     def simulate(self):
         own_trades = {}
@@ -35,8 +31,9 @@ class Simulator():
             own_trades = self.compute_trades(last_prices, last_result)
             # Calculate the profits
             self.compute_position_profit(own_trades)
-            self.total_pnl.append(self.calculate_pnl(last_prices))
+            self.calculate_pnl(last_prices)
 
+        self.plot_pnl()
         print(self.total_pnl)
     def load_trading_sate(self, timestamp, own_trades):
         # Get the timestamp
@@ -126,12 +123,12 @@ class Simulator():
                     for i in [1, 2, 3]:
                         if product_row[f"ask_price_{i}"].item() is not None and product_row[
                             f"ask_price_{i}"].item() <= price and quantity != 0:
-                            bought_quantity = min(quantity, -product_row[f"ask_volume_{i}"].item())
+                            bought_quantity = min(quantity, product_row[f"ask_volume_{i}"].item())
                             own_trades[product].append(
                                 Trade(product, product_row[f"ask_price_{i}"].item(), bought_quantity, "", "",
                                       product_row["timestamp"]))
                             # Update remaining quantity
-                            quantity = max(0, product_row[f"bid_volume_{i}"].item() + quantity)
+                            quantity = max(0, product_row[f"ask_volume_{i}"].item() + quantity)
 
         return own_trades
 
@@ -143,24 +140,20 @@ class Simulator():
             pos_change = 0
             profit_change = 0
             for trade in product_trades:
-                if trade.quantity < 0:
-                    profit_change += trade.price
-                    pos_change -= trade.quantity
-                if trade.quantity < 0:
-                    profit_change -= trade.price
-                    pos_change += trade.quantity
+                profit_change -= trade.price * trade.quantity
+                pos_change += trade.quantity
 
             # Update product position
             if product not in self.position.keys():
                 self.position[product] = pos_change
             else:
-                self.position[product] += self.position[product]
+                self.position[product] += pos_change
 
             # Update product profit
             if product not in self.money_profit.keys():
                 self.money_profit[product] = profit_change
             else:
-                self.money_profit[product] += self.money_profit[product]
+                self.money_profit[product] += profit_change
 
     def calculate_pnl(self, curr_prices):
         # Calculates the current total profit and loss given the products' prices, positions and money profit
@@ -170,5 +163,26 @@ class Simulator():
             if product not in self.money_profit.keys():
                 continue
             pnl[product] = self.money_profit[product] + prod_row[1]["mid_price"] * self.position[product]
+            if product not in self.total_pnl.keys():
+                self.total_pnl[product] = []
+            self.total_pnl[product].append(pnl[product])
         return pnl
 
+    def plot_pnl(self):
+        # Plots the profit and loss
+        for prod in self.total_pnl.keys():
+
+            plt.plot(self.total_pnl[prod], label=prod)
+            plt.legend()
+            plt.savefig(f"pnl_{prod}.jpg")
+            plt.clf()
+        # plt.legend()
+        # plt.savefig("pnl.jpg")
+
+    def plot_midprices(self):
+        unique_prods = self.prices["product"].unique()
+        for product in unique_prods:
+            prod_rows = self.prices[self.prices["product"] == product]
+            plt.plot(prod_rows["mid_price"])
+            plt.savefig(f"mid_price_{product}.jpg")
+            plt.clf()
