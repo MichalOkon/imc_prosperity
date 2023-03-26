@@ -49,19 +49,19 @@ class Trader:
         self.last_days = 100
         self.banana_days = 2
         self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1,"BERRIES": 1}
-        self.derivative_resolution = {"PINA_COLADAS": 25, "COCONUTS": 10, "DIVING_GEAR": 10,"BERRIES": 10}  # best 10
-        self.diff_thresh = {"PINA_COLADAS": 20, "COCONUTS": 5, "DIVING_GEAR": 50,"BERRIES": 10}  # best 20 pina, 5 coco
+        self.derivative_resolution = {"PINA_COLADAS": 25, "COCONUTS": 10, "DIVING_GEAR": 15,"BERRIES": 10}  # best 10
+        self.diff_thresh = {"PINA_COLADAS": 20, "COCONUTS": 5, "DIVING_GEAR": 15,"BERRIES": 10}  # best 20 pina, 5 coco
         # How many of the best bids/asks we should consider
         self.trade_count = 1
 
         self.old_asks = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": []}
         self.old_bids = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": []}
         self.spread = {"BANANAS": 2, "PINA_COLADAS": 1, "COCONUTS": 2, "BERRIES": 2}
-        self.fill_diff = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 3}
+        self.fill_diff = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 3.5}
         self.mean_diffs = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": [], "DIVING_GEAR": [], "BERRIES": []}
 
         self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600, "DIVING_GEAR": 50, "BERRIES": 250}
-        self.max_own_order = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 10, "COCONUTS": 300, "DIVING_GEAR": 25, "BERRIES": 125}
+        self.max_own_order = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 10, "COCONUTS": 300, "DIVING_GEAR": 25, "BERRIES": 250}
 
         self.pina_means = []
         self.coco_stds = []
