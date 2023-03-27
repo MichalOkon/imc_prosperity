@@ -9,7 +9,69 @@ import numpy as np
 from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, ProsperityEncoder
 
 PEARLS_PRICE = 10000
+import json
+from datamodel import Order, ProsperityEncoder, Symbol, Trade, TradingState
+from typing import Any
 
+class Logger:
+    def __init__(self) -> None:
+        self.logs = ""
+
+    def print(self, *objects: Any, sep: str = " ", end: str = "\n") -> None:
+        self.logs += sep.join(map(str, objects)) + end
+
+    def flush(self, state: TradingState, orders: dict[Symbol, list[Order]]) -> None:
+        print(json.dumps({
+            "state": self.compress_state(state),
+            "orders": self.compress_orders(orders),
+            "logs": self.logs,
+        }, cls=ProsperityEncoder, separators=(",", ":"), sort_keys=True))
+
+        self.logs = ""
+
+    def compress_state(self, state: TradingState) -> dict[str, Any]:
+        listings = []
+        for listing in state.listings.values():
+            listings.append([listing["symbol"], listing["product"], listing["denomination"]])
+
+        order_depths = {}
+        for symbol, order_depth in state.order_depths.items():
+            order_depths[symbol] = [order_depth.buy_orders, order_depth.sell_orders]
+
+        return {
+            "t": state.timestamp,
+            "l": listings,
+            "od": order_depths,
+            "ot": self.compress_trades(state.own_trades),
+            "mt": self.compress_trades(state.market_trades),
+            "p": state.position,
+            "o": state.observations,
+        }
+
+    def compress_trades(self, trades: dict[Symbol, list[Trade]]) -> list[list[Any]]:
+        compressed = []
+        for arr in trades.values():
+            for trade in arr:
+                compressed.append([
+                    trade.symbol,
+                    trade.buyer,
+                    trade.seller,
+                    trade.price,
+                    trade.quantity,
+                    trade.timestamp,
+                ])
+
+        return compressed
+
+    def compress_orders(self, orders: dict[Symbol, list[Order]]) -> list[list[Any]]:
+        compressed = []
+        for arr in orders.values():
+            for order in arr:
+                compressed.append([order.symbol, order.price, order.quantity])
+
+        return compressed
+
+logger = Logger()
 
 class Trader:
 
@@ -22,19 +84,20 @@ class Trader:
         self.last_days = 100
         self.banana_days = 2
         self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1,"BERRIES": 1}
-        self.derivative_resolution = {"PINA_COLADAS": 25, "COCONUTS": 10, "DIVING_GEAR": 15,"BERRIES": 10}  # best 10
-        self.diff_thresh = {"PINA_COLADAS": 20, "COCONUTS": 5, "DIVING_GEAR": 15,"BERRIES": 10}  # best 20 pina, 5 coco
+        self.derivative_resolution = {"PINA_COLADAS": 15, "COCONUTS": 15, "DIVING_GEAR": 15,"BERRIES": 20}  # best 10
+        self.diff_thresh = {"PINA_COLADAS": 40, "COCONUTS": 15, "DIVING_GEAR": 25,"BERRIES": 20}  # best 20 pina, 5 coco
         # How many of the best bids/asks we should consider
         self.trade_count = 1
 
         self.old_asks = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": []}
         self.old_bids = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": []}
-        self.spread = {"BANANAS": 2, "PINA_COLADAS": 1, "COCONUTS": 2, "BERRIES": 2}
-        self.fill_diff = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 3.5}
+        self.spread = {"BANANAS": 2, "PINA_COLADAS": 1, "COCONUTS": 2, "BERRIES": 3}
+        self.fill_diff = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 2}
+        self.fill_diff_sell = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 4}
         self.mean_diffs = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": [], "DIVING_GEAR": [], "BERRIES": []}
 
         self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600, "DIVING_GEAR": 50, "BERRIES": 250}
-        self.max_own_order = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 10, "COCONUTS": 300, "DIVING_GEAR": 25, "BERRIES": 250}
+        self.max_own_order = {"BANANAS": 0, "PEARLS": 0, "PINA_COLADAS": 0, "COCONUTS": 0, "DIVING_GEAR": 0, "BERRIES": 0}
 
         self.pina_means = []
         self.coco_stds = []
@@ -366,7 +429,7 @@ class Trader:
                     best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
 
                     i = 0
-                    while i < self.trade_count and len(best_bids) > i and best_bids[i] + self.fill_diff[
+                    while i < self.trade_count and len(best_bids) > i and best_bids[i] + self.fill_diff_sell[
                         product] > avg_ask:
                         if prod_position == -self.max_pos[product]:
                             break
@@ -558,6 +621,7 @@ class Trader:
 
             # Return the dict of orders
             # Depending on the logic above
+        logger.flush(state, result)
         return result
 
     def cache_prices(self, state: TradingState) -> None:

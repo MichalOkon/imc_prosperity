@@ -34,7 +34,7 @@ class Simulator():
             self.calculate_pnl(last_prices)
 
         self.plot_pnl()
-        print(self.total_pnl)
+        # print(self.total_pnl)
     def load_trading_sate(self, timestamp, own_trades):
         # Get the timestamp
 
