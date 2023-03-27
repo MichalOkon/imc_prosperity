@@ -1,19 +1,26 @@
+import datetime
+import os
+
 import pandas as pd
 from datamodel import Listing, OrderDepth, Trade, TradingState
 
 from matplotlib import pyplot as plt
-
+from datetime import datetime
 class Simulator():
     def __init__(self, prices_round: str, trades_round: str, trader):
+        self.prices_round_name = prices_round
+        self.trades_round_name = trades_round
         self.prices: pd.DataFrame = pd.read_csv(prices_round, delimiter=";")
         self.trades: pd.DataFrame = pd.read_csv(trades_round, delimiter=";")
         print(self.prices)
         self.trader = trader
 
         self.position = {}
+        self.position_history = {}
         for symbol in self.prices["product"].unique():
             self.position[symbol] = 0
-
+            self.position_history[symbol] = []
+            self.position_history[symbol].append(0)
         self.money_profit = {}
         self.total_pnl = {}
 
@@ -24,6 +31,7 @@ class Simulator():
 
         for timestamp in unique_timestamps:
             # Get the next state
+
             state = self.load_trading_sate(timestamp, own_trades)
             last_result = self.trader.run(state)
             # Simulate the market
@@ -34,6 +42,7 @@ class Simulator():
             self.calculate_pnl(last_prices)
 
         self.plot_pnl()
+        self.plot_positions()
         print(self.total_pnl)
     def load_trading_sate(self, timestamp, own_trades):
         # Get the timestamp
@@ -101,6 +110,7 @@ class Simulator():
         # Computes if any trades have been performed and outputs a dictionary containing a list of traded products
         own_trades = {}
         for product in last_result.keys():
+
             own_trades[product] = []
             product_orders = last_result[product]
             product_row = last_prices[last_prices["product"] == product]
@@ -148,7 +158,7 @@ class Simulator():
                 self.position[product] = pos_change
             else:
                 self.position[product] += pos_change
-
+            self.position_history[product].append(self.position[product])
             # Update product profit
             if product not in self.money_profit.keys():
                 self.money_profit[product] = profit_change
@@ -169,20 +179,35 @@ class Simulator():
         return pnl
 
     def plot_pnl(self):
+        if not os.path.exists("pnl"):
+            os.makedirs("pnl")
         # Plots the profit and loss
         for prod in self.total_pnl.keys():
 
             plt.plot(self.total_pnl[prod], label=prod)
             plt.legend()
-            plt.savefig(f"pnl_{prod}.jpg")
+            curr_time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+            plt.savefig(f"pnl/pnl_{prod}_{self.prices_round_name}_{curr_time}.jpg")
             plt.clf()
         # plt.legend()
         # plt.savefig("pnl.jpg")
 
     def plot_midprices(self):
+        if not os.path.exists("midprices"):
+            os.makedirs("midprices")
         unique_prods = self.prices["product"].unique()
         for product in unique_prods:
             prod_rows = self.prices[self.prices["product"] == product]
             plt.plot(prod_rows["mid_price"])
-            plt.savefig(f"mid_price_{product}.jpg")
+            plt.savefig(f"midprices/mid_price_{product}_{self.prices_round_name}.jpg")
+            plt.clf()
+
+    def plot_positions(self):
+        if not os.path.exists("positions"):
+            os.makedirs("positions")
+        unique_prods = self.prices["product"].unique()
+        for product in unique_prods:
+            plt.plot(self.position_history[product])
+            curr_time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+            plt.savefig(f"positions/positions_{product}_{self.prices_round_name}_{curr_time}.jpg")
             plt.clf()

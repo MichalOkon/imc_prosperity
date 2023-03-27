@@ -22,8 +22,8 @@ class Trader:
         self.last_days = 100
         self.banana_days = 2
         self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1,"BERRIES": 1}
-        self.derivative_resolution = {"PINA_COLADAS": 25, "COCONUTS": 10, "DIVING_GEAR": 15,"BERRIES": 10}  # best 10
-        self.diff_thresh = {"PINA_COLADAS": 20, "COCONUTS": 5, "DIVING_GEAR": 15,"BERRIES": 10}  # best 20 pina, 5 coco
+        self.derivative_resolution = {"PINA_COLADAS": 25, "COCONUTS": 15, "DIVING_GEAR": 15,"BERRIES": 10}  # best 10
+        self.diff_thresh = {"PINA_COLADAS": 20, "COCONUTS": 15, "DIVING_GEAR": 15,"BERRIES": 10}  # best 20 pina, 5 coco
         # How many of the best bids/asks we should consider
         self.trade_count = 1
 
