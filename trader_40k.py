@@ -13,65 +13,65 @@ import json
 from datamodel import Order, ProsperityEncoder, Symbol, Trade, TradingState
 from typing import Any
 
-class Logger:
-    def __init__(self) -> None:
-        self.logs = ""
-
-    def print(self, *objects: Any, sep: str = " ", end: str = "\n") -> None:
-        self.logs += sep.join(map(str, objects)) + end
-
-    def flush(self, state: TradingState, orders: dict[Symbol, list[Order]]) -> None:
-        print(json.dumps({
-            "state": self.compress_state(state),
-            "orders": self.compress_orders(orders),
-            "logs": self.logs,
-        }, cls=ProsperityEncoder, separators=(",", ":"), sort_keys=True))
-
-        self.logs = ""
-
-    def compress_state(self, state: TradingState) -> dict[str, Any]:
-        listings = []
-        for listing in state.listings.values():
-            listings.append([listing["symbol"], listing["product"], listing["denomination"]])
-
-        order_depths = {}
-        for symbol, order_depth in state.order_depths.items():
-            order_depths[symbol] = [order_depth.buy_orders, order_depth.sell_orders]
-
-        return {
-            "t": state.timestamp,
-            "l": listings,
-            "od": order_depths,
-            "ot": self.compress_trades(state.own_trades),
-            "mt": self.compress_trades(state.market_trades),
-            "p": state.position,
-            "o": state.observations,
-        }
-
-    def compress_trades(self, trades: dict[Symbol, list[Trade]]) -> list[list[Any]]:
-        compressed = []
-        for arr in trades.values():
-            for trade in arr:
-                compressed.append([
-                    trade.symbol,
-                    trade.buyer,
-                    trade.seller,
-                    trade.price,
-                    trade.quantity,
-                    trade.timestamp,
-                ])
-
-        return compressed
-
-    def compress_orders(self, orders: dict[Symbol, list[Order]]) -> list[list[Any]]:
-        compressed = []
-        for arr in orders.values():
-            for order in arr:
-                compressed.append([order.symbol, order.price, order.quantity])
-
-        return compressed
-
-logger = Logger()
+# class Logger:
+#     def __init__(self) -> None:
+#         self.logs = ""
+#
+#     def print(self, *objects: Any, sep: str = " ", end: str = "\n") -> None:
+#         self.logs += sep.join(map(str, objects)) + end
+#
+#     def flush(self, state: TradingState, orders: dict[Symbol, list[Order]]) -> None:
+#         print(json.dumps({
+#             "state": self.compress_state(state),
+#             "orders": self.compress_orders(orders),
+#             "logs": self.logs,
+#         }, cls=ProsperityEncoder, separators=(",", ":"), sort_keys=True))
+#
+#         self.logs = ""
+#
+#     def compress_state(self, state: TradingState) -> dict[str, Any]:
+#         listings = []
+#         for listing in state.listings.values():
+#             listings.append([listing["symbol"], listing["product"], listing["denomination"]])
+#
+#         order_depths = {}
+#         for symbol, order_depth in state.order_depths.items():
+#             order_depths[symbol] = [order_depth.buy_orders, order_depth.sell_orders]
+#
+#         return {
+#             "t": state.timestamp,
+#             "l": listings,
+#             "od": order_depths,
+#             "ot": self.compress_trades(state.own_trades),
+#             "mt": self.compress_trades(state.market_trades),
+#             "p": state.position,
+#             "o": state.observations,
+#         }
+#
+#     def compress_trades(self, trades: dict[Symbol, list[Trade]]) -> list[list[Any]]:
+#         compressed = []
+#         for arr in trades.values():
+#             for trade in arr:
+#                 compressed.append([
+#                     trade.symbol,
+#                     trade.buyer,
+#                     trade.seller,
+#                     trade.price,
+#                     trade.quantity,
+#                     trade.timestamp,
+#                 ])
+#
+#         return compressed
+#
+#     def compress_orders(self, orders: dict[Symbol, list[Order]]) -> list[list[Any]]:
+#         compressed = []
+#         for arr in orders.values():
+#             for order in arr:
+#                 compressed.append([order.symbol, order.price, order.quantity])
+#
+#         return compressed
+#
+# logger = Logger()
 
 class Trader:
 
@@ -112,15 +112,15 @@ class Trader:
         self.dolphins_spotted = False
         self.dolphins_gone = False
 
-        self.dolphin_action_time = 9
-        self.gear_timestamp_diff = 700
+        self.dolphin_action_time = 900
+        self.gear_timestamp_diff = 70000
 
         self.dolphins_spotted_timestamp = -1
         self.dolphins_gone_timestamp = -1
 
-        self.berries_ripe_timestamp = 4000
-        self.berries_peak_timestamp = 5000
-        self.berries_sour_timestamp = 6250
+        self.berries_ripe_timestamp = 400000
+        self.berries_peak_timestamp = 500000
+        self.berries_sour_timestamp = 625000
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         """
@@ -138,9 +138,11 @@ class Trader:
                     self.old_dolphins = state.observations["DOLPHIN_SIGHTINGS"]
                     continue
                 if  state.observations["DOLPHIN_SIGHTINGS"] - self.old_dolphins > 10:
+                    print("DOLHPINS SPOTTED")
                     self.dolphins_spotted = True
                     self.dolphins_spotted_timestamp = state.timestamp
                 if state.observations["DOLPHIN_SIGHTINGS"] - self.old_dolphins < -10:
+                    print("DOLHPINS GONE")
                     self.dolphins_gone = True
                     self.dolphins_gone_timestamp = state.timestamp
                 self.old_dolphins = state.observations["DOLPHIN_SIGHTINGS"]
@@ -160,7 +162,8 @@ class Trader:
             self.cache_pearl_prices(state)
             self.cache_prices(state)
             if product == "BERRIES":
-                if 0 < state.timestamp - self.berries_ripe_timestamp < 50:
+                if 0 < state.timestamp - self.berries_ripe_timestamp < 5000:
+                    print("BERRIES ALMOST RIPE")
                     # start buying berries if they start being ripe
                     if len(order_depth.sell_orders) != 0:
                         best_asks = sorted(order_depth.sell_orders.keys())
@@ -181,7 +184,8 @@ class Trader:
                                 prod_position += vol
                                 new_buy_orders += vol
                             i += 1
-                if 0 < state.timestamp - self.berries_peak_timestamp < 50:
+                if 0 < state.timestamp - self.berries_peak_timestamp < 5000:
+                    print("BERRIES READY TO SELL")
                     if len(order_depth.buy_orders) != 0:
                         best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
 
@@ -203,8 +207,9 @@ class Trader:
                                 new_sell_orders += vol
 
                             i += 1
-                if -50 < state.timestamp - self.berries_sour_timestamp < 0:
-                    # start buying berries if they start being ripe
+                if -5000 < state.timestamp - self.berries_sour_timestamp < 0:
+                    print("BERRIES SOUR")
+                    # start buying berries if they start being sour
                     if len(order_depth.sell_orders) != 0:
 
                         best_asks = sorted(order_depth.sell_orders.keys())
@@ -228,9 +233,12 @@ class Trader:
 
 
             if product == "DIVING_GEAR":
-
+                # print(self.dolphins_spotted_timestamp )
                 if self.dolphins_spotted and state.timestamp - self.dolphins_spotted_timestamp < self.dolphin_action_time:
                     # start buying gear if dolphins have been spotted
+                    print(self.dolphins_spotted_timestamp)
+                    print("BUYING GEAR")
+                    print(state.timestamp)
                     if len(order_depth.sell_orders) != 0:
                         best_asks = sorted(order_depth.sell_orders.keys())
 
@@ -253,6 +261,7 @@ class Trader:
 
                 if self.dolphins_gone and state.timestamp - self.dolphins_gone_timestamp < self.dolphin_action_time:
                     # start selling gear if dolphins are going away
+                    print("SELLING GEAR")
                     if len(order_depth.buy_orders) != 0:
                         best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
                         i = 0
@@ -621,7 +630,7 @@ class Trader:
 
             # Return the dict of orders
             # Depending on the logic above
-        logger.flush(state, result)
+        # logger.flush(state, result)
         return result
 
     def cache_prices(self, state: TradingState) -> None:
