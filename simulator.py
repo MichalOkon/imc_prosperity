@@ -57,19 +57,19 @@ class Simulator():
 
             # Add buy and sell order to the order depths
             buy_orders = {}
-            if prod_row[1]["bid_price_1"] is not None:
+            if prod_row[1]["bid_price_1"] == prod_row[1]["bid_price_1"]:
                 buy_orders[prod_row[1]["bid_price_1"]] = prod_row[1]["bid_volume_1"]
-            if prod_row[1]["bid_price_2"] is not None:
+            if prod_row[1]["bid_price_2"] == prod_row[1]["bid_price_2"]:
                 buy_orders[prod_row[1]["bid_price_2"]] = prod_row[1]["bid_volume_2"]
-            if prod_row[1]["bid_price_1"] is not None:
+            if prod_row[1]["bid_price_3"] == prod_row[1]["bid_price_3"]:
                 buy_orders[prod_row[1]["bid_price_3"]] = prod_row[1]["bid_volume_3"]
 
             sell_orders = {}
-            if prod_row[1]["ask_price_1"] is not None:
+            if prod_row[1]["ask_price_1"] == prod_row[1]["ask_price_1"] :
                 sell_orders[prod_row[1]["ask_price_1"]] = -prod_row[1]["ask_volume_1"]
-            if prod_row[1]["ask_price_2"] is not None:
+            if prod_row[1]["ask_price_2"] == prod_row[1]["ask_price_2"]:
                 sell_orders[prod_row[1]["ask_price_2"]] = -prod_row[1]["ask_volume_2"]
-            if prod_row[1]["ask_price_1"] is not None:
+            if prod_row[1]["ask_price_3"] == prod_row[1]["ask_price_3"]:
                 sell_orders[prod_row[1]["ask_price_3"]] = -prod_row[1]["ask_volume_3"]
 
             order_depths[product] = OrderDepth(buy_orders=buy_orders, sell_orders=sell_orders)
@@ -110,7 +110,7 @@ class Simulator():
                 if order.quantity < 0:
                     # Calculate if the product was indeed sold
                     for i in [1, 2, 3]:
-                        if product_row[f"bid_price_{i}"].item() is not None and product_row[
+                        if product_row[f"bid_price_{i}"].item() ==  product_row[f"bid_price_{i}"].item() and product_row[
                             f"bid_price_{i}"].item() >= price and quantity != 0:
                             sold_quantity = max(quantity, -product_row[f"bid_volume_{i}"].item())
                             own_trades[product].append(
@@ -121,7 +121,7 @@ class Simulator():
                 if order.quantity > 0:
                     # Calculate if the product was indeed bought
                     for i in [1, 2, 3]:
-                        if product_row[f"ask_price_{i}"].item() is not None and product_row[
+                        if product_row[f"ask_price_{i}"].item() == product_row[f"ask_price_{i}"].item()  and product_row[
                             f"ask_price_{i}"].item() <= price and quantity != 0:
                             bought_quantity = min(quantity, product_row[f"ask_volume_{i}"].item())
                             own_trades[product].append(
