@@ -71,7 +71,7 @@ class Logger:
 
         return compressed
 
-logger = Logger()
+# logger = Logger()
 
 class Trader:
 
@@ -535,6 +535,8 @@ class Trader:
                     self.coco_stds.append(mid_std)
 
             if product == "PINA_COLADAS":
+                if len(self.coco_stds) == 0:
+                    continue
 
                 if len(self.old_asks[product]) < self.banana_days or len(self.old_bids[product]) < self.banana_days:
                     self.pina_means.append(0)
@@ -621,7 +623,7 @@ class Trader:
 
             # Return the dict of orders
             # Depending on the logic above
-        logger.flush(state, result)
+        # logger.flush(state, result)
         return result
 
     def cache_prices(self, state: TradingState) -> None:
