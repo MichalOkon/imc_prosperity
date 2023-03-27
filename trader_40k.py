@@ -83,21 +83,24 @@ class Trader:
         # How many last days to consider when calculating the average prices
         self.last_days = 100
         self.banana_days = 2
-        self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1,"BERRIES": 1}
-        self.derivative_resolution = {"PINA_COLADAS": 150, "COCONUTS": 1500, "DIVING_GEAR": 15,"BERRIES": 20}  # best 10
-        self.diff_thresh = {"PINA_COLADAS": 30, "COCONUTS": 30, "DIVING_GEAR": 25,"BERRIES": 20}  # best 20 pina, 5 coco
+        self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1, "BERRIES": 1}
+        self.derivative_resolution = {"PINA_COLADAS": 25, "COCONUTS": 10, "DIVING_GEAR": 15, "BERRIES": 10}  # best 10
+        self.diff_thresh = {"PINA_COLADAS": 20, "COCONUTS": 5, "DIVING_GEAR": 15, "BERRIES": 10}  # best 20 pina, 5 coco
         # How many of the best bids/asks we should consider
         self.trade_count = 1
 
         self.old_asks = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": []}
         self.old_bids = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": []}
-        self.spread = {"BANANAS": 2, "PINA_COLADAS": 1, "COCONUTS": 2, "BERRIES": 3}
-        self.fill_diff = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 2}
-        self.fill_diff_sell = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 2}
-        self.mean_diffs = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": [], "DIVING_GEAR": [], "BERRIES": []}
+        self.spread = {"BANANAS": 2, "PINA_COLADAS": 1, "COCONUTS": 2, "BERRIES": 2}
+        self.fill_diff = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 3.5, "BAGUETTE": 3, "DIP": 3,
+                          "UKULELE": 3, "PICNIC_BASKET": 3}
+        self.mean_diffs = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": [], "DIVING_GEAR": [],
+                           "BERRIES": [], "BAGUETTE": [], "DIP": [], "UKULELE": [], "PICNIC_BASKET": []}
 
-        self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600, "DIVING_GEAR": 50, "BERRIES": 250}
-        self.max_own_order = {"BANANAS": 0, "PEARLS": 0, "PINA_COLADAS": 0, "COCONUTS": 0, "DIVING_GEAR": 0, "BERRIES": 0}
+        self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600, "DIVING_GEAR": 50,
+                        "BERRIES": 250, "BAGUETTE": 150, "DIP": 300, "UKULELE": 70, "PICNIC_BASKET": 70}
+        self.max_own_order = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 10, "COCONUTS": 300, "DIVING_GEAR": 25,
+                              "BERRIES": 250}
 
         self.pina_means = []
         self.coco_stds = []
@@ -333,6 +336,23 @@ class Trader:
                     if state.timestamp - self.dolphins_gone_timestamp - self.gear_timestamp_diff > self.dolphin_action_time:
                         self.dolphins_gone = False
 
+            if product == "PICNIC_BASKET":
+                if len(self.old_asks[product]) < self.banana_days or len(self.old_bids[product]) < self.banana_days:
+                    continue
+                dip_bid, dip_ask = self.calculate_prices("DIP", 5)
+                dip_price = (dip_ask + dip_bid) / 2
+                ukulele_bid, ukulele_ask = self.calculate_prices("UKULELE", 5)
+                ukulele_price = (ukulele_ask + ukulele_bid) / 2
+                baguette_bid, baguette_ask = self.calculate_prices("BAGUETTE", 5)
+                baguette_price = (baguette_ask + baguette_bid) / 2
+                real_value = (4 * dip_price + 2 * baguette_price + ukulele_price) / 7
+                standard_dev = self.calculate_stds_for_bucket(100)
+                index_bid, index_ask = self.calculate_prices(product, -1)
+                index_price = (index_ask + index_bid) / 2
+                if real_value + 2 * standard_dev < index_price:
+                    if len(order_depth.sell_orders) != 0:
+
+                        best_asks = sorted(order_depth.sell_orders.keys())
 
             if product == "PEARLS":
                 # Define a fair value
@@ -407,7 +427,8 @@ class Trader:
                 # if buy_capacity > 0:
                 #     orders.append(Order(product, acceptable_price - 5, buy_capacity))
 
-            elif product == "BANANAS" or (product == "BERRIES" and not (self.berries_ripe_timestamp < state.timestamp < self.berries_sour_timestamp)):
+            elif product == "BANANAS" or (product == "BERRIES" and not (
+                    self.berries_ripe_timestamp < state.timestamp < self.berries_sour_timestamp)):
 
                 if len(self.old_asks[product]) < self.banana_days or len(self.old_bids[product]) < self.banana_days:
                     continue
@@ -543,7 +564,7 @@ class Trader:
                     elif self.above and price < upper_bound:
                         assert not self.below
                         self.above = False
-            
+
             if  product == "PINA_COLADAS" or product == "COCONUTS" or (product == "DIVING_GEAR" and not self.dolphins_spotted and not self.dolphins_gone):
                 self.calculate_means(product)
 
@@ -618,7 +639,7 @@ class Trader:
                     mid_std = (std_bid + std_ask) / 2
                     self.coco_stds.append(mid_std)
 
-            
+
                 # #
                 # # Add some new orders on our own with very profitable prices hoping some stupid bots fill them
                 # mid_price = (avg_bid + avg_ask) / 2
@@ -691,6 +712,21 @@ class Trader:
             if len(prod_trades) > 0:
                 prices = [(trade.quantity, trade.price) for trade in prod_trades]
                 self.cached_prices[product].append(prices)
+
+    def calculate_stds_for_bucket(self, days):
+        relevant_bids = {"DIP": [], "BAGUETTE": [], "UKULELE": []}
+        relevant_asks = {"DIP": [], "BAGUETTE": [], "UKULELE": []}
+        for product in ["DIP", "BAGUETTE", "UKULELE"]:
+            for bids in self.old_bids[product][-days:]:
+                relevant_bids[product].extend([(value, bids[value]) for value in bids])
+            for asks in self.old_asks[product][-days:]:
+                relevant_asks[product].extend([(value, asks[value]) for value in asks])
+
+        std_bid = np.std([(4 * x[0] + 2 * y[0] + z[0]) / 7 for x, y, z in
+                          zip(relevant_bids["DIP"], relevant_bids["BAGUETTE"], relevant_bids["UKULELE"])])
+        std_ask = np.std([(4 * x[0] + 2 * y[0] + z[0]) / 7 for x, y, z in
+                          zip(relevant_asks["DIP"], relevant_asks["BAGUETTE"], relevant_asks["UKULELE"])])
+        return (std_bid + std_ask) / 2
 
     def calculate_means(self, product):
         if product not in self.cached_means:
