@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 from datamodel import Listing, OrderDepth, Trade, TradingState
-
+from tqdm import tqdm
 from matplotlib import pyplot as plt
 from datetime import datetime
 class Simulator():
@@ -12,7 +12,6 @@ class Simulator():
         self.trades_round_name = trades_round
         self.prices: pd.DataFrame = pd.read_csv(prices_round, delimiter=";")
         self.trades: pd.DataFrame = pd.read_csv(trades_round, delimiter=";")
-        print(self.prices)
         self.trader = trader
 
         self.position = {}
@@ -29,7 +28,7 @@ class Simulator():
 
         unique_timestamps = self.prices["timestamp"].unique()
 
-        for timestamp in unique_timestamps:
+        for timestamp in tqdm(unique_timestamps):
             # Get the next state
 
             state = self.load_trading_sate(timestamp, own_trades)
