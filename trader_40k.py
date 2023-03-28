@@ -9,69 +9,69 @@ import numpy as np
 from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, ProsperityEncoder
 
 PEARLS_PRICE = 10000
-import json
+
 from datamodel import Order, ProsperityEncoder, Symbol, Trade, TradingState
-from typing import Any
 
-class Logger:
-    def __init__(self) -> None:
-        self.logs = ""
 
-    def print(self, *objects: Any, sep: str = " ", end: str = "\n") -> None:
-        self.logs += sep.join(map(str, objects)) + end
-
-    def flush(self, state: TradingState, orders: dict[Symbol, list[Order]]) -> None:
-        print(json.dumps({
-            "state": self.compress_state(state),
-            "orders": self.compress_orders(orders),
-            "logs": self.logs,
-        }, cls=ProsperityEncoder, separators=(",", ":"), sort_keys=True))
-
-        self.logs = ""
-
-    def compress_state(self, state: TradingState) -> dict[str, Any]:
-        listings = []
-        for listing in state.listings.values():
-            listings.append([listing["symbol"], listing["product"], listing["denomination"]])
-
-        order_depths = {}
-        for symbol, order_depth in state.order_depths.items():
-            order_depths[symbol] = [order_depth.buy_orders, order_depth.sell_orders]
-
-        return {
-            "t": state.timestamp,
-            "l": listings,
-            "od": order_depths,
-            "ot": self.compress_trades(state.own_trades),
-            "mt": self.compress_trades(state.market_trades),
-            "p": state.position,
-            "o": state.observations,
-        }
-
-    def compress_trades(self, trades: dict[Symbol, list[Trade]]) -> list[list[Any]]:
-        compressed = []
-        for arr in trades.values():
-            for trade in arr:
-                compressed.append([
-                    trade.symbol,
-                    trade.buyer,
-                    trade.seller,
-                    trade.price,
-                    trade.quantity,
-                    trade.timestamp,
-                ])
-
-        return compressed
-
-    def compress_orders(self, orders: dict[Symbol, list[Order]]) -> list[list[Any]]:
-        compressed = []
-        for arr in orders.values():
-            for order in arr:
-                compressed.append([order.symbol, order.price, order.quantity])
-
-        return compressed
-
-logger = Logger()
+# class Logger:
+#     def __init__(self) -> None:
+#         self.logs = ""
+#
+#     def print(self, *objects: Any, sep: str = " ", end: str = "\n") -> None:
+#         self.logs += sep.join(map(str, objects)) + end
+#
+#     def flush(self, state: TradingState, orders: dict[Symbol, list[Order]]) -> None:
+#         print(json.dumps({
+#             "state": self.compress_state(state),
+#             "orders": self.compress_orders(orders),
+#             "logs": self.logs,
+#         }, cls=ProsperityEncoder, separators=(",", ":"), sort_keys=True))
+#
+#         self.logs = ""
+#
+#     def compress_state(self, state: TradingState) -> dict[str, Any]:
+#         listings = []
+#         for listing in state.listings.values():
+#             listings.append([listing["symbol"], listing["product"], listing["denomination"]])
+#
+#         order_depths = {}
+#         for symbol, order_depth in state.order_depths.items():
+#             order_depths[symbol] = [order_depth.buy_orders, order_depth.sell_orders]
+#
+#         return {
+#             "t": state.timestamp,
+#             "l": listings,
+#             "od": order_depths,
+#             "ot": self.compress_trades(state.own_trades),
+#             "mt": self.compress_trades(state.market_trades),
+#             "p": state.position,
+#             "o": state.observations,
+#         }
+#
+#     def compress_trades(self, trades: dict[Symbol, list[Trade]]) -> list[list[Any]]:
+#         compressed = []
+#         for arr in trades.values():
+#             for trade in arr:
+#                 compressed.append([
+#                     trade.symbol,
+#                     trade.buyer,
+#                     trade.seller,
+#                     trade.price,
+#                     trade.quantity,
+#                     trade.timestamp,
+#                 ])
+#
+#         return compressed
+#
+#     def compress_orders(self, orders: dict[Symbol, list[Order]]) -> list[list[Any]]:
+#         compressed = []
+#         for arr in orders.values():
+#             for order in arr:
+#                 compressed.append([order.symbol, order.price, order.quantity])
+#
+#         return compressed
+#
+# logger = Logger()
 
 class Trader:
 
@@ -118,9 +118,9 @@ class Trader:
         self.dolphins_spotted_timestamp = -1
         self.dolphins_gone_timestamp = -1
 
-        self.berries_ripe_timestamp = 400000
+        self.berries_ripe_timestamp = 350000
         self.berries_peak_timestamp = 500000
-        self.berries_sour_timestamp = 625000
+        self.berries_sour_timestamp = 650000
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         """
@@ -207,29 +207,29 @@ class Trader:
                                 new_sell_orders += vol
 
                             i += 1
-                if -5000 < state.timestamp - self.berries_sour_timestamp < 0:
-                    print("BERRIES SOUR")
-                    # start buying berries if they start being sour
-                    if len(order_depth.sell_orders) != 0:
-
-                        best_asks = sorted(order_depth.sell_orders.keys())
-
-                        i = 0
-                        while i < self.trade_count and len(best_asks) > i:
-                            if prod_position == self.max_pos[product]:
-                                break
-                            best_ask_volume = order_depth.sell_orders[best_asks[i]]
-                            if prod_position - best_ask_volume <= self.max_pos[product]:
-                                orders.append(Order(product, best_asks[i], -best_ask_volume))
-                                prod_position += -best_ask_volume
-                                new_buy_orders += -best_ask_volume
-                            else:
-                                # Buy as much as we can without exceeding the self.max_pos[product]
-                                vol = self.max_pos[product] - prod_position
-                                orders.append(Order(product, best_asks[i], vol))
-                                prod_position += vol
-                                new_buy_orders += vol
-                            i += 1
+                # if -5000 < state.timestamp - self.berries_sour_timestamp < 0:
+                #     print("BERRIES SOUR")
+                #     # start buying berries if they start being sour
+                #     if len(order_depth.sell_orders) != 0:
+                #
+                #         best_asks = sorted(order_depth.sell_orders.keys())
+                #
+                #         i = 0
+                #         while i < self.trade_count and len(best_asks) > i:
+                #             if prod_position == self.max_pos[product]:
+                #                 break
+                #             best_ask_volume = order_depth.sell_orders[best_asks[i]]
+                #             if prod_position - best_ask_volume <= self.max_pos[product]:
+                #                 orders.append(Order(product, best_asks[i], -best_ask_volume))
+                #                 prod_position += -best_ask_volume
+                #                 new_buy_orders += -best_ask_volume
+                #             else:
+                #                 # Buy as much as we can without exceeding the self.max_pos[product]
+                #                 vol = self.max_pos[product] - prod_position
+                #                 orders.append(Order(product, best_asks[i], vol))
+                #                 prod_position += vol
+                #                 new_buy_orders += vol
+                #             i += 1
 
 
             if product == "DIVING_GEAR":
@@ -468,103 +468,103 @@ class Trader:
                                         -max(0, min(self.max_own_order[product], self.max_pos[product] + prod_position,
                                                     self.max_pos[product] + orig_position,
                                                     self.max_pos[product] + orig_position - new_sell_orders))))
+            #
+            # if product == "PINA_COLADAS":
+            #     if len(self.coco_stds) == 0:
+            #         continue
+            #
+            #     if len(self.old_asks[product]) < self.banana_days or len(self.old_bids[product]) < self.banana_days:
+            #         self.pina_means.append(0)
+            #         continue
+            #
+            #     avg_bid, avg_ask = self.calculate_prices(product, self.mean_window)
+            #     mid_avg = (avg_bid + avg_ask) / 2
+            #     self.pina_means.append(mid_avg)
+            #
+            #     lower_bound = self.pina_means[-1] - 2 * self.coco_stds[-1]
+            #     upper_bound = self.pina_means[-1] + 2 * self.coco_stds[-1]
+            #
+            #     best_ask = None
+            #     best_bid = None
+            #
+            #     if len(order_depth.sell_orders) != 0:
+            #         best_asks = sorted(order_depth.sell_orders.keys())
+            #         best_ask = best_asks[-1]
+            #
+            #         i = 0
+            #         while i < self.trade_count and len(best_asks) > i and \
+            #                 not self.below and not self.above and best_asks[i] < lower_bound:
+            #             self.below = True
+            #             if prod_position == self.max_pos[product]:
+            #                 break
+            #             best_ask_volume = order_depth.sell_orders[best_asks[i]]
+            #             if prod_position - best_ask_volume <= self.max_pos[product]:
+            #                 orders.append(Order(product, best_asks[i], -best_ask_volume))
+            #                 prod_position += -best_ask_volume
+            #                 new_buy_orders += -best_ask_volume
+            #             else:
+            #                 # Buy as much as we can without exceeding the self.max_pos[product]
+            #                 vol = self.max_pos[product] - prod_position
+            #                 orders.append(Order(product, best_asks[i], vol))
+            #                 prod_position += vol
+            #                 new_buy_orders += vol
+            #             i += 1
+            #
+            #     if len(order_depth.buy_orders) != 0:
+            #         best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
+            #         best_bid = best_bids[-1]
+            #
+            #         i = 0
+            #         while i < self.trade_count and len(best_bids) > i and \
+            #                 not self.below and not self.above and best_bids[i] > upper_bound:
+            #             self.above = True
+            #             if prod_position == -self.max_pos[product]:
+            #                 break
+            #             best_bid_volume = order_depth.buy_orders[best_bids[i]]
+            #             if prod_position - best_bid_volume >= -self.max_pos[product]:
+            #                 orders.append(Order(product, best_bids[i], -best_bid_volume))
+            #                 prod_position += -best_bid_volume
+            #                 new_sell_orders += best_bid_volume
+            #
+            #             else:
+            #                 # Sell as much as we can without exceeding the self.max_pos[product]
+            #                 vol = prod_position + self.max_pos[product]
+            #                 orders.append(Order(product, best_bids[i], -vol))
+            #                 prod_position += -vol
+            #                 new_sell_orders += vol
+            #
+            #             i += 1
+            #
+            #     if best_bid is not None and best_ask is not None:
+            #         price = (best_bid + best_ask) / 2
+            #         if self.below and price > lower_bound:
+            #             assert not self.above
+            #             self.below = False
+            #         elif self.above and price < upper_bound:
+            #             assert not self.below
+            #             self.above = False
 
-            if product == "PINA_COLADAS":
-                if len(self.coco_stds) == 0:
-                    continue
-
-                if len(self.old_asks[product]) < self.banana_days or len(self.old_bids[product]) < self.banana_days:
-                    self.pina_means.append(0)
-                    continue
-
-                avg_bid, avg_ask = self.calculate_prices(product, self.mean_window)
-                mid_avg = (avg_bid + avg_ask) / 2
-                self.pina_means.append(mid_avg)
-
-                lower_bound = self.pina_means[-1] - 2 * self.coco_stds[-1]
-                upper_bound = self.pina_means[-1] + 2 * self.coco_stds[-1]
-
-                best_ask = None
-                best_bid = None
-
-                if len(order_depth.sell_orders) != 0:
-                    best_asks = sorted(order_depth.sell_orders.keys())
-                    best_ask = best_asks[-1]
-
-                    i = 0
-                    while i < self.trade_count and len(best_asks) > i and \
-                            not self.below and not self.above and best_asks[i] < lower_bound:
-                        self.below = True
-                        if prod_position == self.max_pos[product]:
-                            break
-                        best_ask_volume = order_depth.sell_orders[best_asks[i]]
-                        if prod_position - best_ask_volume <= self.max_pos[product]:
-                            orders.append(Order(product, best_asks[i], -best_ask_volume))
-                            prod_position += -best_ask_volume
-                            new_buy_orders += -best_ask_volume
-                        else:
-                            # Buy as much as we can without exceeding the self.max_pos[product]
-                            vol = self.max_pos[product] - prod_position
-                            orders.append(Order(product, best_asks[i], vol))
-                            prod_position += vol
-                            new_buy_orders += vol
-                        i += 1
-
-                if len(order_depth.buy_orders) != 0:
-                    best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
-                    best_bid = best_bids[-1]
-
-                    i = 0
-                    while i < self.trade_count and len(best_bids) > i and \
-                            not self.below and not self.above and best_bids[i] > upper_bound:
-                        self.above = True
-                        if prod_position == -self.max_pos[product]:
-                            break
-                        best_bid_volume = order_depth.buy_orders[best_bids[i]]
-                        if prod_position - best_bid_volume >= -self.max_pos[product]:
-                            orders.append(Order(product, best_bids[i], -best_bid_volume))
-                            prod_position += -best_bid_volume
-                            new_sell_orders += best_bid_volume
-
-                        else:
-                            # Sell as much as we can without exceeding the self.max_pos[product]
-                            vol = prod_position + self.max_pos[product]
-                            orders.append(Order(product, best_bids[i], -vol))
-                            prod_position += -vol
-                            new_sell_orders += vol
-
-                        i += 1
-
-                if best_bid is not None and best_ask is not None:
-                    price = (best_bid + best_ask) / 2
-                    if self.below and price > lower_bound:
-                        assert not self.above
-                        self.below = False
-                    elif self.above and price < upper_bound:
-                        assert not self.below
-                        self.above = False
-            
             if  product == "PINA_COLADAS" or product == "COCONUTS" or (product == "DIVING_GEAR" and not self.dolphins_spotted and not self.dolphins_gone):
                 self.calculate_means(product)
-
-                if product == "PINA_COLADAS" or product == "COCONUTS":
-                    if len(self.cached_means[product]) < self.derivative_resolution[product] + 2:
-                        old_mean = self.cached_means[product][0]
-                    else:
-                        old_mean = np.mean(self.cached_means[product][-self.derivative_resolution[product]:-1])
-                    diff = self.cached_means[product][-1] - old_mean
-                else:
-                    if len(self.cached_means[product]) < self.derivative_resolution[product] + 1:
-                        old_mean = self.cached_means[product][0]
-                    else:
-                        old_mean = self.cached_means[product][-self.derivative_resolution[product]]
-                    diff = self.cached_means[product][-1] - old_mean
-
-                # if len(self.cached_means[product]) < self.derivative_resolution[product] + 1:
-                #     old_mean = self.cached_means[product][0]
+                #
+                # if product == "PINA_COLADAS" or product == "COCONUTS":
+                #     if len(self.cached_means[product]) < self.derivative_resolution[product] + 2:
+                #         old_mean = self.cached_means[product][0]
+                #     else:
+                #         old_mean = np.mean(self.cached_means[product][-self.derivative_resolution[product]:-1])
+                #     diff = self.cached_means[product][-1] - old_mean
                 # else:
-                #     old_mean = self.cached_means[product][-self.derivative_resolution[product]]
-                # diff = self.cached_means[product][-1] - old_mean
+                #     if len(self.cached_means[product]) < self.derivative_resolution[product] + 1:
+                #         old_mean = self.cached_means[product][0]
+                #     else:
+                #         old_mean = self.cached_means[product][-self.derivative_resolution[product]]
+                #     diff = self.cached_means[product][-1] - old_mean
+
+                if len(self.cached_means[product]) < self.derivative_resolution[product] + 1:
+                    old_mean = self.cached_means[product][0]
+                else:
+                    old_mean = self.cached_means[product][-self.derivative_resolution[product]]
+                diff = self.cached_means[product][-1] - old_mean
 
                 self.mean_diffs[product].append(diff)
                 if diff < -self.diff_thresh[product] and len(order_depth.sell_orders) != 0:
@@ -589,6 +589,7 @@ class Trader:
 
                 if diff > self.diff_thresh[product] and len(order_depth.buy_orders) != 0:
                     best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
+                    best_bid = best_bids[-1]
 
                     i = 0
                     while i < self.trade_count and len(best_bids) > i:
@@ -609,16 +610,16 @@ class Trader:
 
                         i += 1
 
-            if product == "COCONUTS":
+            # if product == "COCONUTS":
+            #
+            #     if len(self.old_asks[product]) < self.std_window or len(self.old_bids[product]) < self.std_window:
+            #         self.coco_stds.append(0)
+            #     else:
+            #         std_bid, std_ask = self.calculate_stds(product, self.std_window)
+            #         mid_std = (std_bid + std_ask) / 2
+            #         self.coco_stds.append(mid_std)
+            #
 
-                if len(self.old_asks[product]) < self.std_window or len(self.old_bids[product]) < self.std_window:
-                    self.coco_stds.append(0)
-                else:
-                    std_bid, std_ask = self.calculate_stds(product, self.std_window)
-                    mid_std = (std_bid + std_ask) / 2
-                    self.coco_stds.append(mid_std)
-
-            
                 # #
                 # # Add some new orders on our own with very profitable prices hoping some stupid bots fill them
                 # mid_price = (avg_bid + avg_ask) / 2
@@ -634,7 +635,7 @@ class Trader:
 
             # Return the dict of orders
             # Depending on the logic above
-        logger.flush(state, result)
+#  logger.flush(state, result)
         return result
 
     def cache_prices(self, state: TradingState) -> None:

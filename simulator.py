@@ -185,7 +185,8 @@ class Simulator():
 
             plt.plot(self.total_pnl[prod], label=prod)
             plt.legend()
-            plt.savefig(f"pnl/pnl_{prod}_{self.prices_round_name.replace('/', '_')}.jpg")
+            curr_time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+            plt.savefig(f"pnl/pnl_{prod}_{self.prices_round_name.replace('/', '_')}_{curr_time}.jpg")
             plt.clf()
         # plt.legend()
         # plt.savefig("pnl.jpg")
@@ -207,5 +208,6 @@ class Simulator():
         unique_prods = self.prices["product"].unique()
         for product in unique_prods:
             plt.plot(self.position_history[product])
-            plt.savefig(f"positions/positions_{product}_{self.prices_round_name.replace('/', '_')}.jpg")
+            curr_time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+            plt.savefig(f"positions/positions_{product}_{self.prices_round_name.replace('/', '_')}_{curr_time}.jpg")
             plt.clf()
