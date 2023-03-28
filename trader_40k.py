@@ -80,12 +80,13 @@ class Trader:
         self.cached_prices = {}
         self.cached_means = {}
 
-        # How many last days to consider when calculating the average prices
         self.last_days = 100
         self.banana_days = 2
-        self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1,"BERRIES": 1}
-        self.derivative_resolution = {"PINA_COLADAS": 150, "COCONUTS": 1500, "DIVING_GEAR": 15,"BERRIES": 20}  # best 10
-        self.diff_thresh = {"PINA_COLADAS": 30, "COCONUTS": 30, "DIVING_GEAR": 25,"BERRIES": 20}  # best 20 pina, 5 coco
+        # self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1,"BERRIES": 1}
+        self.derivative_resolution = {"PINA_COLADAS": 150, "COCONUTS": 1500, "DIVING_GEAR": 15, "BERRIES": 50,\
+                                      "DIP": 100, "UKULELE": 20, "PICNIC_BASKET": 50, "BAGUETTE": 20}  # best 10
+        self.diff_thresh =  {"PINA_COLADAS": 30,  "COCONUTS": 30,   "DIVING_GEAR": 25, "BERRIES": 20,\
+                                       "DIP": 40, "UKULELE": 150,  "PICNIC_BASKET": 100, "BAGUETTE": 200}  # best 20 pina, 5 coco
         # How many of the best bids/asks we should consider
         self.trade_count = 1
 
@@ -94,10 +95,13 @@ class Trader:
         self.spread = {"BANANAS": 2, "PINA_COLADAS": 1, "COCONUTS": 2, "BERRIES": 3}
         self.fill_diff = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 2}
         self.fill_diff_sell = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 2}
-        self.mean_diffs = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": [], "DIVING_GEAR": [], "BERRIES": []}
+        self.mean_diffs = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": [], "DIVING_GEAR": [], "BERRIES": [],\
+                           "DIP": [], "UKULELE": [],  "PICNIC_BASKET": [], "BAGUETTE": []}
 
-        self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600, "DIVING_GEAR": 50, "BERRIES": 250}
-        self.max_own_order = {"BANANAS": 0, "PEARLS": 0, "PINA_COLADAS": 0, "COCONUTS": 0, "DIVING_GEAR": 0, "BERRIES": 0}
+        self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600, "DIVING_GEAR": 50, "BERRIES": 250,\
+                                       "DIP": 300, "UKULELE": 70,  "PICNIC_BASKET": 70, "BAGUETTE": 150}
+        self.max_own_order = {"BANANAS": 0, "PEARLS": 0, "PINA_COLADAS": 0, "COCONUTS": 0, "DIVING_GEAR": 0, "BERRIES": 0,\
+                                       "DIP": 0, "UKULELE": 0,  "PICNIC_BASKET": 0, "BAGUETTE": 0}
 
         self.pina_means = []
         self.coco_stds = []
@@ -544,7 +548,7 @@ class Trader:
             #             assert not self.below
             #             self.above = False
 
-            if  product == "PINA_COLADAS" or product == "COCONUTS" or (product == "DIVING_GEAR" and not self.dolphins_spotted and not self.dolphins_gone):
+            if  product == "BAGUETTE" or   product == "PINA_COLADAS" or product == "BASKET" or product == "DIP" or product == "UKULELE" or product == "PINA_COLADAS" or product == "COCONUTS" or (product == "DIVING_GEAR" and not self.dolphins_spotted and not self.dolphins_gone):
                 self.calculate_means(product)
                 #
                 # if product == "PINA_COLADAS" or product == "COCONUTS":
@@ -702,7 +706,7 @@ class Trader:
 
         else:
             relevant_prices = []
-            for day_prices in self.cached_prices[product][max(-len(self.cached_prices), -self.mean_days[product]):]:
+            for day_prices in self.cached_prices[product][max(-len(self.cached_prices), -1):]:
                 for price in day_prices:
                     relevant_prices.append(price)
             prices = np.array([x[1] for x in relevant_prices])
