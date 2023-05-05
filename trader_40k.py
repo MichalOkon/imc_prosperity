@@ -2,15 +2,15 @@
 # 1. The "datamodel" imports at the top. Using the typing library is optional.
 # 2. A class called "Trader", this class name should not be changed.
 # 3. A run function that takes a tradingstate as input and outputs a "result" dict.
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 
-from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, ProsperityEncoder
+from datamodel import OrderDepth
 
 PEARLS_PRICE = 10000
 
-from datamodel import Order, ProsperityEncoder, Symbol, Trade, TradingState
+from datamodel import Order, Trade, TradingState
 
 
 # class Logger:
@@ -83,10 +83,10 @@ class Trader:
         self.last_days = 100
         self.banana_days = 2
         # self.mean_days = {"PINA_COLADAS": 1, "COCONUTS": 1, "DIVING_GEAR": 1,"BERRIES": 1}
-        self.derivative_resolution = {"PINA_COLADAS": 150, "COCONUTS": 1500, "DIVING_GEAR": 15, "BERRIES": 50,\
-                                      "DIP": 100, "UKULELE": 20, "PICNIC_BASKET": 50, "BAGUETTE": 20}  # best 10
-        self.diff_thresh =  {"PINA_COLADAS": 30,  "COCONUTS": 30,   "DIVING_GEAR": 25, "BERRIES": 20,\
-                                       "DIP": 40, "UKULELE": 150,  "PICNIC_BASKET": 100, "BAGUETTE": 200}  # best 20 pina, 5 coco
+        self.derivative_resolution = {"PINA_COLADAS": 150, "COCONUTS": 1500, "DIVING_GEAR": 15, "BERRIES": 50,
+                                      "DIP": 20, "UKULELE": 25, "PICNIC_BASKET": 50, "BAGUETTE": 35}  # best 10
+        self.diff_thresh = {"PINA_COLADAS": 30, "COCONUTS": 30, "DIVING_GEAR": 25, "BERRIES": 20,
+                            "DIP": 25, "UKULELE": 20, "PICNIC_BASKET": 100, "BAGUETTE": 45}  # best 20 pina, 5 coco
         # How many of the best bids/asks we should consider
         self.trade_count = 1
 
@@ -95,13 +95,13 @@ class Trader:
         self.spread = {"BANANAS": 2, "PINA_COLADAS": 1, "COCONUTS": 2, "BERRIES": 3}
         self.fill_diff = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 2}
         self.fill_diff_sell = {"BANANAS": 3, "PINA_COLADAS": 0, "COCONUTS": 3, "BERRIES": 2}
-        self.mean_diffs = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": [], "DIVING_GEAR": [], "BERRIES": [],\
-                           "DIP": [], "UKULELE": [],  "PICNIC_BASKET": [], "BAGUETTE": []}
+        self.mean_diffs = {"BANANAS": [], "PEARLS": [], "PINA_COLADAS": [], "COCONUTS": [], "DIVING_GEAR": [], "BERRIES": [],
+                           "DIP": [], "UKULELE": [], "PICNIC_BASKET": [], "BAGUETTE": []}
 
-        self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600, "DIVING_GEAR": 50, "BERRIES": 250,\
-                                       "DIP": 300, "UKULELE": 70,  "PICNIC_BASKET": 70, "BAGUETTE": 150}
-        self.max_own_order = {"BANANAS": 0, "PEARLS": 0, "PINA_COLADAS": 0, "COCONUTS": 0, "DIVING_GEAR": 0, "BERRIES": 0,\
-                                       "DIP": 0, "UKULELE": 0,  "PICNIC_BASKET": 0, "BAGUETTE": 0}
+        self.max_pos = {"BANANAS": 20, "PEARLS": 20, "PINA_COLADAS": 300, "COCONUTS": 600, "DIVING_GEAR": 50, "BERRIES": 250,
+                        "DIP": 300, "UKULELE": 70, "PICNIC_BASKET": 70, "BAGUETTE": 150}
+        self.max_own_order = {"BANANAS": 0, "PEARLS": 0, "PINA_COLADAS": 0, "COCONUTS": 0, "DIVING_GEAR": 0, "BERRIES": 0,
+                              "DIP": 0, "UKULELE": 0, "PICNIC_BASKET": 0, "BAGUETTE": 0}
 
         self.pina_means = []
         self.coco_stds = []
@@ -126,6 +126,10 @@ class Trader:
         self.berries_peak_timestamp = 500000
         self.berries_sour_timestamp = 650000
 
+        self.picnic_real_value_multiplier = 1.005
+        self.flag_bough_picnic = False
+        self.flag_sold_picnic = False
+
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         """
         Only method required. It takes all buy and sell orders for all symbols as an input,
@@ -141,7 +145,7 @@ class Trader:
                 if self.old_dolphins == -1:
                     self.old_dolphins = state.observations["DOLPHIN_SIGHTINGS"]
                     continue
-                if  state.observations["DOLPHIN_SIGHTINGS"] - self.old_dolphins > 10:
+                if state.observations["DOLPHIN_SIGHTINGS"] - self.old_dolphins > 10:
                     print("DOLHPINS SPOTTED")
                     self.dolphins_spotted = True
                     self.dolphins_spotted_timestamp = state.timestamp
@@ -234,7 +238,6 @@ class Trader:
                 #                 prod_position += vol
                 #                 new_buy_orders += vol
                 #             i += 1
-
 
             if product == "DIVING_GEAR":
                 # print(self.dolphins_spotted_timestamp )
@@ -336,7 +339,6 @@ class Trader:
                             i += 1
                     if state.timestamp - self.dolphins_gone_timestamp - self.gear_timestamp_diff > self.dolphin_action_time:
                         self.dolphins_gone = False
-
 
             if product == "PEARLS":
                 # Define a fair value
@@ -548,7 +550,130 @@ class Trader:
             #             assert not self.below
             #             self.above = False
 
-            if  product == "BAGUETTE" or   product == "PINA_COLADAS" or product == "BASKET" or product == "DIP" or product == "UKULELE" or product == "PINA_COLADAS" or product == "COCONUTS" or (product == "DIVING_GEAR" and not self.dolphins_spotted and not self.dolphins_gone):
+            if product == "PICNIC_BASKET":
+                if len(self.old_asks[product]) < self.banana_days or len(self.old_bids[product]) < self.banana_days:
+                    continue
+                dip_bid, dip_ask = self.calculate_prices("DIP", 5)
+                dip_price = (dip_ask + dip_bid) / 2
+                ukulele_bid, ukulele_ask = self.calculate_prices("UKULELE", 5)
+                ukulele_price = (ukulele_ask + ukulele_bid) / 2
+                baguette_bid, baguette_ask = self.calculate_prices("BAGUETTE", 5)
+                baguette_price = (baguette_ask + baguette_bid) / 2
+                real_value = (4 * dip_price + 2 * baguette_price + ukulele_price) * self.picnic_real_value_multiplier
+                standard_dev = self.calculate_stds_for_bucket(100)
+                index_bid, index_ask = self.calculate_prices(product, 1)
+                index_price = (index_ask + index_bid) / 2
+                std_mult = 0
+                if not self.flag_sold_picnic and not self.flag_bough_picnic and real_value < index_price:
+                    if len(order_depth.sell_orders) != 0:
+                        best_asks = sorted(order_depth.sell_orders.keys())
+
+                        something_bought = False
+                        i = 0
+                        while i < self.trade_count and len(best_asks) > i:
+                            if prod_position == self.max_pos[product]:
+                                break
+                            something_bought = True
+                            best_ask_volume = order_depth.sell_orders[best_asks[i]]
+                            if prod_position - best_ask_volume <= self.max_pos[product]:
+                                orders.append(Order(product, best_asks[i], -best_ask_volume))
+                                prod_position += -best_ask_volume
+                                new_buy_orders += -best_ask_volume
+                            else:
+                                # Buy as much as we can without exceeding the self.max_pos[product]
+                                vol = self.max_pos[product] - prod_position
+                                orders.append(Order(product, best_asks[i], vol))
+                                prod_position += vol
+                                new_buy_orders += vol
+                            i += 1
+
+                        if something_bought:
+                            self.flag_bough_picnic = True
+
+                elif not self.flag_sold_picnic and self.flag_bough_picnic and real_value * std_mult * standard_dev > index_price:
+
+                    if len(order_depth.buy_orders) != 0:
+                        best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
+
+                        something_sold = False
+                        i = 0
+                        while i < self.trade_count and len(best_bids) > i:
+                            if prod_position == -self.max_pos[product]:
+                                break
+                            something_sold = True
+                            best_bid_volume = order_depth.buy_orders[best_bids[i]]
+                            if prod_position - best_bid_volume >= -self.max_pos[product]:
+                                orders.append(Order(product, best_bids[i], -best_bid_volume))
+                                prod_position += -best_bid_volume
+                                new_sell_orders += best_bid_volume
+
+                            else:
+                                # Sell as much as we can without exceeding the self.max_pos[product]
+                                vol = prod_position + self.max_pos[product]
+                                orders.append(Order(product, best_bids[i], -vol))
+                                prod_position += -vol
+                                new_sell_orders += vol
+
+                            i += 1
+
+                        if something_sold:
+                            self.flag_bough_picnic = False
+
+                elif not self.flag_sold_picnic and not self.flag_bough_picnic and real_value > index_price:
+                    if len(order_depth.buy_orders) != 0:
+                        best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
+
+                        something_sold = False
+                        i = 0
+                        while i < self.trade_count and len(best_bids) > i:
+                            if prod_position == -self.max_pos[product]:
+                                break
+                            something_sold = True
+                            best_bid_volume = order_depth.buy_orders[best_bids[i]]
+                            if prod_position - best_bid_volume >= -self.max_pos[product]:
+                                orders.append(Order(product, best_bids[i], -best_bid_volume))
+                                prod_position += -best_bid_volume
+                                new_sell_orders += best_bid_volume
+
+                            else:
+                                # Sell as much as we can without exceeding the self.max_pos[product]
+                                vol = prod_position + self.max_pos[product]
+                                orders.append(Order(product, best_bids[i], -vol))
+                                prod_position += -vol
+                                new_sell_orders += vol
+                            i += 1
+
+                        if something_sold:
+                            self.flag_sold_picnic = True
+
+                elif self.flag_sold_picnic and not self.flag_bough_picnic and real_value * std_mult * standard_dev < index_price:
+                    if len(order_depth.sell_orders) != 0:
+                        best_asks = sorted(order_depth.sell_orders.keys())
+
+                        something_bought = False
+                        i = 0
+                        while i < self.trade_count and len(best_asks) > i:
+                            if prod_position == self.max_pos[product]:
+                                break
+                            something_bought = True
+                            best_ask_volume = order_depth.sell_orders[best_asks[i]]
+                            if prod_position - best_ask_volume <= self.max_pos[product]:
+                                orders.append(Order(product, best_asks[i], -best_ask_volume))
+                                prod_position += -best_ask_volume
+                                new_buy_orders += -best_ask_volume
+                            else:
+                                # Buy as much as we can without exceeding the self.max_pos[product]
+                                vol = self.max_pos[product] - prod_position
+                                orders.append(Order(product, best_asks[i], vol))
+                                prod_position += vol
+                                new_buy_orders += vol
+                            i += 1
+
+                        if something_bought:
+                            self.flag_sold_picnic = False
+
+            if product == "BAGUETTE" or product == "PINA_COLADAS" or product == "BASKET" or product == "DIP" or product == "UKULELE" or product == "PINA_COLADAS" or product == "COCONUTS" or (
+                    product == "DIVING_GEAR" and not self.dolphins_spotted and not self.dolphins_gone) or (product == "PICNIC_BASKET"):
                 self.calculate_means(product)
                 #
                 # if product == "PINA_COLADAS" or product == "COCONUTS":
@@ -593,7 +718,6 @@ class Trader:
 
                 if diff > self.diff_thresh[product] and len(order_depth.buy_orders) != 0:
                     best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
-                    best_bid = best_bids[-1]
 
                     i = 0
                     while i < self.trade_count and len(best_bids) > i:
@@ -624,22 +748,22 @@ class Trader:
             #         self.coco_stds.append(mid_std)
             #
 
-                # #
-                # # Add some new orders on our own with very profitable prices hoping some stupid bots fill them
-                # mid_price = (avg_bid + avg_ask) / 2
-                # orders.append(Order(product, mid_price - self.spread[product], max(0, min(self.max_own_order[product], self.max_pos[product] - prod_position,
-                #                                                                         self.max_pos[product] - orig_position,
-                #                                                                         self.max_pos[product] - orig_position - new_buy_orders))))
-                # orders.append(Order(product, mid_price + self.spread[product], -max(0, min(self.max_own_order[product], self.max_pos[product] + prod_position,
-                #                                                                          self.max_pos[product] + orig_position,
-                #                                                                          self.max_pos[product] + orig_position - new_sell_orders))))
+            # #
+            # # Add some new orders on our own with very profitable prices hoping some stupid bots fill them
+            # mid_price = (avg_bid + avg_ask) / 2
+            # orders.append(Order(product, mid_price - self.spread[product], max(0, min(self.max_own_order[product], self.max_pos[product] - prod_position,
+            #                                                                         self.max_pos[product] - orig_position,
+            #                                                                         self.max_pos[product] - orig_position - new_buy_orders))))
+            # orders.append(Order(product, mid_price + self.spread[product], -max(0, min(self.max_own_order[product], self.max_pos[product] + prod_position,
+            #                                                                          self.max_pos[product] + orig_position,
+            #                                                                          self.max_pos[product] + orig_position - new_sell_orders))))
 
             # Add all the above orders to the result dict
             result[product] = orders
 
             # Return the dict of orders
             # Depending on the logic above
-#  logger.flush(state, result)
+        # logger.flush(state, result)
         return result
 
     def cache_prices(self, state: TradingState) -> None:
@@ -724,3 +848,18 @@ class Trader:
         quantities = np.abs(np.array([x[0] for x in relevant_prices]))
 
         return np.average(prices, weights=quantities)
+
+    def calculate_stds_for_bucket(self, days):
+        relevant_bids = {"DIP": [], "BAGUETTE": [], "UKULELE": []}
+        relevant_asks = {"DIP": [], "BAGUETTE": [], "UKULELE": []}
+        for product in ["DIP", "BAGUETTE", "UKULELE"]:
+            for bids in self.old_bids[product][-days:]:
+                relevant_bids[product].extend([(value, bids[value]) for value in bids])
+            for asks in self.old_asks[product][-days:]:
+                relevant_asks[product].extend([(value, asks[value]) for value in asks])
+
+        std_bid = np.std([(4 * x[0] + 2 * y[0] + z[0]) / 7 for x, y, z in
+                          zip(relevant_bids["DIP"], relevant_bids["BAGUETTE"], relevant_bids["UKULELE"])])
+        std_ask = np.std([(4 * x[0] + 2 * y[0] + z[0]) / 7 for x, y, z in
+                          zip(relevant_asks["DIP"], relevant_asks["BAGUETTE"], relevant_asks["UKULELE"])])
+        return (std_bid + std_ask) / 2
