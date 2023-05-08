@@ -2,7 +2,7 @@ from typing import Dict, List, Any, Tuple
 
 import numpy as np
 
-from Products.Product import Pearls, Bananas, PinaColadas, Baguette
+from Products.Product import Pearls, Bananas, PinaColadas, Baguette, Ukulele, Basket, Coconut, Dip
 from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, ProsperityEncoder
 
 PEARLS_PRICE = 10000
@@ -18,6 +18,10 @@ class Trader:
             "BANANAS": Bananas(),
             "PINA_COLADAS": PinaColadas(),
             "BAGUETTE": Baguette(),
+            "UKULELE": Ukulele(),
+            "PICNIC_BASKET": Basket(),
+            "COCONUTS": Coconut(),
+            "DIP": Dip(),
         }
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
