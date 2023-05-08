@@ -1,4 +1,7 @@
-from Products.Strategy import Strategy, FixedStrategy, CrossStrategy, DiffStrategy
+from strategies.CrossStrategy import CrossStrategy
+from strategies.DiffStrategy import DiffStrategy
+from strategies.FixedStrategy import FixedStrategy
+from strategies.TimeBasedStrategy import TimeBasedStrategy
 
 
 class Pearls(FixedStrategy):
@@ -39,3 +42,7 @@ class Ukulele(DiffStrategy):
 class Basket(DiffStrategy):
     def __init__(self):
         super().__init__("PICNIC_BASKET", max_position=70, derivative_resolution=50, diff_thresh=100)
+
+class Berries(TimeBasedStrategy):
+    def __init__(self):
+        super().__init__("BERRIES", min_req_price_difference=2, max_position=250)

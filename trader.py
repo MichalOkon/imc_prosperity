@@ -1,13 +1,12 @@
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 
-from Products.Product import Pearls, Bananas, PinaColadas, Baguette, Ukulele, Basket, Coconut, Dip
-from datamodel import OrderDepth, TradingState, Order, Trade, Symbol, ProsperityEncoder
+from products.Product import Pearls, Bananas, PinaColadas, Baguette, Ukulele, Basket, Coconut, Dip, Berries
 
 PEARLS_PRICE = 10000
 
-from datamodel import Order, ProsperityEncoder, Symbol, Trade, TradingState
+from datamodel import Order, Trade, TradingState
 
 
 class Trader:
@@ -22,6 +21,7 @@ class Trader:
             "PICNIC_BASKET": Basket(),
             "COCONUTS": Coconut(),
             "DIP": Dip(),
+            "BERRIES": Berries(),
         }
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
@@ -42,89 +42,6 @@ class Trader:
                 result[product] = orders
 
         return result
-
-    def cache_prices(self, state: TradingState) -> None:
-        for product in state.order_depths.keys():
-            if product not in self.old_bids.keys():
-                self.old_bids[product] = []
-            if product not in self.old_asks.keys():
-                self.old_asks[product] = []
-            sell_orders = state.order_depths[product].sell_orders
-            buy_orders = state.order_depths[product].buy_orders
-
-            self.old_asks[product].append(sell_orders)
-            self.old_bids[product].append(buy_orders)
-
-    def calculate_prices(self, product, days: int) -> Tuple[int, int]:
-        relevant_bids = []
-        for bids in self.old_bids[product][-days:]:
-            relevant_bids.extend([(value, bids[value]) for value in bids])
-        relevant_asks = []
-        for asks in self.old_asks[product][-days:]:
-            relevant_asks.extend([(value, asks[value]) for value in asks])
-
-        avg_bid = np.average([x[0] for x in relevant_bids], weights=[x[1] for x in relevant_bids])
-        avg_ask = np.average([x[0] for x in relevant_asks], weights=[x[1] for x in relevant_asks])
-
-        return avg_bid, avg_ask
-
-    def calculate_stds(self, product, days: int) -> Tuple[int, int]:
-        relevant_bids = []
-        for bids in self.old_bids[product][-days:]:
-            relevant_bids.extend([(value, bids[value]) for value in bids])
-        relevant_asks = []
-        for asks in self.old_asks[product][-days:]:
-            relevant_asks.extend([(value, asks[value]) for value in asks])
-
-        std_bid = np.std([x[0] for x in relevant_bids])
-        std_ask = np.std([x[0] for x in relevant_asks])
-
-        return std_bid, std_ask
-
-    def cache_pearl_prices(self, state: TradingState) -> None:
-        # Caches prices of bought and sold products
-
-        market_trades = state.market_trades
-        own_trades = state.own_trades
-        listings = state.listings
-        for product in listings.keys():
-
-            if product not in self.cached_prices.keys():
-                self.cached_prices[product] = []
-
-            prod_trades: List[Trade] = own_trades.get(product, []) + market_trades.get(product, [])
-
-            if len(prod_trades) > 0:
-                prices = [(trade.quantity, trade.price) for trade in prod_trades]
-                self.cached_prices[product].append(prices)
-
-    def calculate_means(self, product):
-        if product not in self.cached_means:
-            self.cached_means[product] = []
-
-        if len(self.cached_prices[product]) == 0:
-            self.cached_means[product].append(0)
-
-        else:
-            relevant_prices = []
-            for day_prices in self.cached_prices[product][max(-len(self.cached_prices), -1):]:
-                for price in day_prices:
-                    relevant_prices.append(price)
-            prices = np.array([x[1] for x in relevant_prices])
-            quantities = np.abs(np.array([x[0] for x in relevant_prices]))
-
-            self.cached_means[product].append(np.average(prices, weights=quantities))
-
-    def calculate_price(self, product):
-        # Calculate average price of a product
-        relevant_prices = []
-        for day_prices in self.cached_prices[product][-self.last_days:]:
-            for price in day_prices:
-                relevant_prices.append(price)
-        prices = np.array([x[1] for x in relevant_prices])
-        quantities = np.abs(np.array([x[0] for x in relevant_prices]))
-
-        return np.average(prices, weights=quantities)
 
 # class Trader2:
 #
