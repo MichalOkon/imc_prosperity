@@ -6,6 +6,8 @@ from datamodel import Listing, OrderDepth, Trade, TradingState
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 from datetime import datetime
+
+
 class Simulator():
     def __init__(self, prices_round: str, trades_round: str, trader):
         self.prices_round_name = prices_round
@@ -40,9 +42,9 @@ class Simulator():
             self.compute_position_profit(own_trades)
             self.calculate_pnl(last_prices)
 
-        # self.plot_pnl()
-        # self.plot_positions()
-        # print(self.total_pnl)
+        self.plot_pnl()
+        self.plot_positions()
+
     def load_trading_sate(self, timestamp, own_trades):
         # Get the timestamp
 
@@ -73,7 +75,7 @@ class Simulator():
                 buy_orders[prod_row[1]["bid_price_3"]] = prod_row[1]["bid_volume_3"]
 
             sell_orders = {}
-            if prod_row[1]["ask_price_1"] == prod_row[1]["ask_price_1"] :
+            if prod_row[1]["ask_price_1"] == prod_row[1]["ask_price_1"]:
                 sell_orders[prod_row[1]["ask_price_1"]] = -prod_row[1]["ask_volume_1"]
             if prod_row[1]["ask_price_2"] == prod_row[1]["ask_price_2"]:
                 sell_orders[prod_row[1]["ask_price_2"]] = -prod_row[1]["ask_volume_2"]
@@ -88,8 +90,9 @@ class Simulator():
             product = traded_row[1]['symbol']
             if product not in market_trades.keys():
                 market_trades[product] = []
-            market_trades[product].append(Trade(traded_row[1]['symbol'], traded_row[1]['price'], traded_row[1]['quantity'],
-                                                traded_row[1]['buyer'], traded_row[1]['seller'], timestamp))
+            market_trades[product].append(
+                Trade(traded_row[1]['symbol'], traded_row[1]['price'], traded_row[1]['quantity'],
+                      traded_row[1]['buyer'], traded_row[1]['seller'], timestamp))
 
         # Set position to zeros if the dictionary is empty
 
@@ -119,7 +122,7 @@ class Simulator():
                 if order.quantity < 0:
                     # Calculate if the product was indeed sold
                     for i in [1, 2, 3]:
-                        if product_row[f"bid_price_{i}"].item() ==  product_row[f"bid_price_{i}"].item() and product_row[
+                        if product_row[f"bid_price_{i}"].item() == product_row[f"bid_price_{i}"].item() and product_row[
                             f"bid_price_{i}"].item() >= price and quantity != 0:
                             sold_quantity = max(quantity, -product_row[f"bid_volume_{i}"].item())
                             own_trades[product].append(
@@ -130,7 +133,7 @@ class Simulator():
                 if order.quantity > 0:
                     # Calculate if the product was indeed bought
                     for i in [1, 2, 3]:
-                        if product_row[f"ask_price_{i}"].item() == product_row[f"ask_price_{i}"].item()  and product_row[
+                        if product_row[f"ask_price_{i}"].item() == product_row[f"ask_price_{i}"].item() and product_row[
                             f"ask_price_{i}"].item() <= price and quantity != 0:
                             bought_quantity = min(quantity, product_row[f"ask_volume_{i}"].item())
                             own_trades[product].append(
@@ -142,7 +145,6 @@ class Simulator():
         return own_trades
 
     def compute_position_profit(self, traded_products):
-        # TODO: implement position limits
         for product in traded_products.keys():
             product_trades = traded_products[product]
 
@@ -178,11 +180,10 @@ class Simulator():
         return pnl
 
     def plot_pnl(self):
-        if not os.path.exists("pnl"):
-            os.makedirs("pnl")
+        if not os.path.exists("../pnl"):
+            os.makedirs("../pnl")
         # Plots the profit and loss
         for prod in self.total_pnl.keys():
-
             plt.plot(self.total_pnl[prod], label=prod)
             plt.legend()
             curr_time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
@@ -192,19 +193,18 @@ class Simulator():
         # plt.savefig("pnl.jpg")
 
     def plot_midprices(self):
-        if not os.path.exists("midprices"):
-            os.makedirs("midprices")
+        if not os.path.exists("../midprices"):
+            os.makedirs("../midprices")
         unique_prods = self.prices["product"].unique()
         for product in unique_prods:
             prod_rows = self.prices[self.prices["product"] == product]
-            # print(prod_rows["mid_price"].reset_index())
             plt.plot(prod_rows["mid_price"].reset_index(drop=True))
             plt.savefig(f"midprices/mid_price_{product}_{self.prices_round_name.replace('/', '_')}.jpg")
             plt.clf()
 
     def plot_positions(self):
-        if not os.path.exists("positions"):
-            os.makedirs("positions")
+        if not os.path.exists("../positions"):
+            os.makedirs("../positions")
         unique_prods = self.prices["product"].unique()
         for product in unique_prods:
             plt.plot(self.position_history[product])

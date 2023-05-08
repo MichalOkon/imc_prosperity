@@ -1,10 +1,8 @@
 import threading
 from itertools import product
 
-import pandas as pd
-
-from simulator import Simulator
-from trader_40k import Trader
+from simulator.simulator import Simulator
+from trader import Trader
 
 PRODUCT_NAME = 'DIP'
 
@@ -21,8 +19,10 @@ best_profit_loss = -999999999999
 
 def simulate_three_days(derivative_resolution: int, diff_thresh: int):
     trader = Trader()
-    trader.diff_thresh[PRODUCT_NAME] = diff_thresh
-    trader.derivative_resolution[PRODUCT_NAME] = derivative_resolution
+    if hasattr(trader.products[PRODUCT_NAME], 'diff_thresh'):
+        trader.products[PRODUCT_NAME].diff_thresh = diff_thresh
+    if hasattr(trader.products[PRODUCT_NAME], 'derivative_resolution'):
+        trader.products[PRODUCT_NAME].derivative_resoltuion = derivative_resolution
 
     sim = Simulator("data/island-data-bottle-round-4/prices_round_4_day_3.csv",
                     "data/island-data-bottle-round-4/trades_round_4_day_3_nn.csv", trader)
