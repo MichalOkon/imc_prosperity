@@ -1,15 +1,59 @@
 import datetime
 import os
+from datetime import datetime
 
 import pandas as pd
-from datamodel import Listing, OrderDepth, Trade, TradingState
-from tqdm import tqdm
 from matplotlib import pyplot as plt
-from datetime import datetime
+from tqdm import tqdm
+
+from datamodel import Listing, OrderDepth, Trade, TradingState
 
 
 # Instructions on how to run this simulator can be found in the readme file
-class Simulator():
+def process_trades(last_prices, last_result):
+    # Computes if any trades have been performed and outputs a dictionary containing a list of traded products
+
+    own_trades = {}
+    for product in last_result.keys():
+
+        own_trades[product] = []
+        product_orders = last_result[product]
+        product_row = last_prices[last_prices["product"] == product]
+
+        for order in product_orders:
+            quantity = order.quantity
+            price = order.price
+
+            if order.quantity < 0:
+                # Calculate if the product was indeed sold
+                for i in [1, 2, 3]:
+                    if product_row[f"bid_price_{i}"].item() == product_row[f"bid_price_{i}"].item() \
+                            and product_row[f"bid_price_{i}"].item() >= price \
+                            and quantity != 0:
+                        sold_quantity = max(quantity, -product_row[f"bid_volume_{i}"].item())
+                        own_trades[product].append(
+                            Trade(product, product_row[f"bid_price_{i}"].item(), sold_quantity, "", "",
+                                  product_row["timestamp"].item()))
+                        # Update remaining quantity
+                        quantity = min(0, product_row[f"bid_volume_{i}"].item() + quantity)
+
+            if order.quantity > 0:
+                # Calculate if the product was indeed bought
+                for i in [1, 2, 3]:
+                    if product_row[f"ask_price_{i}"].item() == product_row[f"ask_price_{i}"].item() \
+                            and product_row[f"ask_price_{i}"].item() <= price \
+                            and quantity != 0:
+                        bought_quantity = min(quantity, product_row[f"ask_volume_{i}"].item())
+                        own_trades[product].append(
+                            Trade(product, product_row[f"ask_price_{i}"].item(), bought_quantity, "", "",
+                                  product_row["timestamp"]))
+                        # Update remaining quantity
+                        quantity = max(0, product_row[f"ask_volume_{i}"].item() + quantity)
+
+    return own_trades
+
+
+class Simulator:
     def __init__(self, prices_round: str, trades_round: str, trader):
         self.prices_round_name = prices_round
         self.trades_round_name = trades_round
@@ -39,7 +83,7 @@ class Simulator():
             last_result = self.trader.run(state)
             # Simulate the market
             last_prices = self.prices[self.prices['timestamp'] == timestamp]
-            own_trades = self.process_trades(last_prices, last_result)
+            own_trades = process_trades(last_prices, last_result)
             # Calculate the profits
             self.process_position_profit(own_trades)
             self.calculate_pnl(last_prices)
@@ -107,48 +151,6 @@ class Simulator():
 
         return state
 
-    def process_trades(self, last_prices, last_result):
-        # Computes if any trades have been performed and outputs a dictionary containing a list of traded products
-
-        own_trades = {}
-        for product in last_result.keys():
-
-            own_trades[product] = []
-            product_orders = last_result[product]
-            product_row = last_prices[last_prices["product"] == product]
-
-            for order in product_orders:
-                quantity = order.quantity
-                price = order.price
-
-                if order.quantity < 0:
-                    # Calculate if the product was indeed sold
-                    for i in [1, 2, 3]:
-                        if product_row[f"bid_price_{i}"].item() == product_row[f"bid_price_{i}"].item() \
-                                and product_row[f"bid_price_{i}"].item() >= price \
-                                and quantity != 0:
-                            sold_quantity = max(quantity, -product_row[f"bid_volume_{i}"].item())
-                            own_trades[product].append(
-                                Trade(product, product_row[f"bid_price_{i}"].item(), sold_quantity, "", "",
-                                      product_row["timestamp"].item()))
-                            # Update remaining quantity
-                            quantity = min(0, product_row[f"bid_volume_{i}"].item() + quantity)
-
-                if order.quantity > 0:
-                    # Calculate if the product was indeed bought
-                    for i in [1, 2, 3]:
-                        if product_row[f"ask_price_{i}"].item() == product_row[f"ask_price_{i}"].item() \
-                                and product_row[f"ask_price_{i}"].item() <= price \
-                                and quantity != 0:
-                            bought_quantity = min(quantity, product_row[f"ask_volume_{i}"].item())
-                            own_trades[product].append(
-                                Trade(product, product_row[f"ask_price_{i}"].item(), bought_quantity, "", "",
-                                      product_row["timestamp"]))
-                            # Update remaining quantity
-                            quantity = max(0, product_row[f"ask_volume_{i}"].item() + quantity)
-
-        return own_trades
-
     def process_position_profit(self, traded_products):
         # Calculates and update the position and profit change given the trades made by the agent
 
@@ -191,41 +193,39 @@ class Simulator():
     def plot_pnl(self):
         # Plots the profit and loss after the game has been finished
 
-        if not os.path.exists("pnl"):
-            os.makedirs("pnl")
+        if not os.path.exists("simulator/results/pnl"):
+            os.makedirs("simulator/results/pnl")
 
         for prod in self.total_pnl.keys():
             plt.plot(self.total_pnl[prod], label=prod)
             plt.legend()
             curr_time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-            plt.savefig(f"pnl/pnl_{prod}_{self.prices_round_name.replace('/', '_')}_{curr_time}.jpg")
+            plt.savefig(f"simulator/results/pnl/pnl_{prod}_{self.prices_round_name.replace('/', '_')}_{curr_time}.jpg")
             plt.clf()
-        # plt.legend()
-        # plt.savefig("pnl.jpg")
 
     def plot_midprices(self):
         # Plots mid_prices found in the csv file
 
-        if not os.path.exists("midprices"):
-            os.makedirs("midprices")
+        if not os.path.exists("simulator/results/midprices"):
+            os.makedirs("simulator/results/midprices")
 
         unique_prods = self.prices["product"].unique()
         for product in unique_prods:
             prod_rows = self.prices[self.prices["product"] == product]
             # print(prod_rows["mid_price"].reset_index())
             plt.plot(prod_rows["mid_price"].reset_index(drop=True))
-            plt.savefig(f"midprices/mid_price_{product}_{self.prices_round_name.replace('/', '_')}.jpg")
+            plt.savefig(f"simulator/results/midprices/mid_price_{product}_{self.prices_round_name.replace('/', '_')}.jpg")
             plt.clf()
 
     def plot_positions(self):
         # Plots positions of the products after the game has been finished
 
-        if not os.path.exists("positions"):
-            os.makedirs("positions")
+        if not os.path.exists("simulator/results/positions"):
+            os.makedirs("simulator/results/positions")
 
         unique_prods = self.prices["product"].unique()
         for product in unique_prods:
             plt.plot(self.position_history[product])
             curr_time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-            plt.savefig(f"positions/positions_{product}_{self.prices_round_name.replace('/', '_')}_{curr_time}.jpg")
+            plt.savefig(f"simulator/results/positions/positions_{product}_{self.prices_round_name.replace('/', '_')}_{curr_time}.jpg")
             plt.clf()

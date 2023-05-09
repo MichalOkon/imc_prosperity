@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 
-from products.Product import Pearls, Bananas, PinaColadas, Baguette, Ukulele, Basket, Coconut, Dip, Berries, DivingGear
+from products.product import Pearls, Bananas, PinaColadas, Baguette, Ukulele, Basket, Coconut, Dip, Berries, DivingGear
 
 PEARLS_PRICE = 10000
 

@@ -9,7 +9,7 @@ PRODUCT_NAME = 'DIP'
 threads = []
 
 derivative_resolutions = range(10, 50, 5)
-diff_threshs = range(10, 60, 10)
+diff_thresholds = range(10, 60, 10)
 my_lock = threading.Lock()
 
 best_diff_thresh = 0
@@ -50,7 +50,7 @@ def simulate_three_days(derivative_resolution: int, diff_thresh: int):
 
 
 def main():
-    for derivative_resolution, diff_thresh in product(derivative_resolutions, diff_threshs):
+    for derivative_resolution, diff_thresh in product(derivative_resolutions, diff_thresholds):
         try:
             thread = threading.Thread(target=simulate_three_days, args=(derivative_resolution, diff_thresh),
                                       daemon=True)
