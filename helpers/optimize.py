@@ -24,18 +24,18 @@ def simulate_three_days(derivative_resolution: int, diff_thresh: int):
     if hasattr(trader.products[PRODUCT_NAME], 'derivative_resolution'):
         trader.products[PRODUCT_NAME].derivative_resoltuion = derivative_resolution
 
-    sim = Simulator("data/island-data-bottle-round-4/prices_round_4_day_3.csv",
-                    "data/island-data-bottle-round-4/trades_round_4_day_3_nn.csv", trader)
+    sim = Simulator("datasets/island-data-bottle-round-4/prices_round_4_day_3.csv",
+                    "datasets/island-data-bottle-round-4/trades_round_4_day_3_nn.csv", trader)
     sim.simulate()
     first: int = sim.total_pnl[PRODUCT_NAME][-1]
 
-    sim = Simulator("data/island-data-bottle-round-4/prices_round_4_day_2.csv",
-                    "data/island-data-bottle-round-4/trades_round_4_day_2_nn.csv", trader)
+    sim = Simulator("datasets/island-data-bottle-round-4/prices_round_4_day_2.csv",
+                    "datasets/island-data-bottle-round-4/trades_round_4_day_2_nn.csv", trader)
     sim.simulate()
     second: int = sim.total_pnl[PRODUCT_NAME][-1]
 
-    sim = Simulator("data/island-data-bottle-round-4/prices_round_4_day_1.csv",
-                    "data/island-data-bottle-round-4/trades_round_4_day_1_nn.csv", trader)
+    sim = Simulator("datasets/island-data-bottle-round-4/prices_round_4_day_1.csv",
+                    "datasets/island-data-bottle-round-4/trades_round_4_day_1_nn.csv", trader)
     sim.simulate()
     third: int = sim.total_pnl[PRODUCT_NAME][-1]
 
