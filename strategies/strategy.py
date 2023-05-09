@@ -1,8 +1,4 @@
-from typing import Tuple, List
-
-import numpy as np
-
-from datamodel import OrderDepth, Order, TradingState, Trade
+from datamodel import OrderDepth, Order, TradingState
 
 
 class Strategy:
@@ -16,7 +12,7 @@ class Strategy:
         self.prod_position: int = 0
         self.new_buy_orders: int = 0
         self.new_sell_orders: int = 0
-        self.order_depth: OrderDepth = None
+        self.order_depth: OrderDepth = OrderDepth()
 
     def reset_from_state(self, state: TradingState):
         self.prod_position = state.position[self.name] if self.name in state.position.keys() else 0
@@ -54,10 +50,26 @@ class Strategy:
             self.prod_position += vol
             self.new_buy_orders += vol
 
+    def continuous_buy(self, order_depth: OrderDepth, orders: list):
+        if len(order_depth.sell_orders) != 0:
+            best_asks = sorted(order_depth.sell_orders.keys())
 
+            i = 0
+            while i < self.trade_count and len(best_asks) > i:
+                if self.prod_position == self.max_pos:
+                    break
 
+                self.buy_product(best_asks, i, order_depth, orders)
+                i += 1
 
+    def continuous_sell(self, order_depth: OrderDepth, orders: list):
+        if len(order_depth.buy_orders) != 0:
+            best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
 
+            i = 0
+            while i < self.trade_count and len(best_bids) > i:
+                if self.prod_position == -self.max_pos:
+                    break
 
-
-
+                self.sell_product(best_bids, i, order_depth, orders)
+                i += 1

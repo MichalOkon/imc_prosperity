@@ -2,8 +2,8 @@ from typing import List
 
 import numpy as np
 
-from strategies.Strategy import Strategy
 from datamodel import TradingState, Trade, OrderDepth
+from strategies.strategy import Strategy
 
 
 class DiffStrategy(Strategy):
@@ -20,25 +20,10 @@ class DiffStrategy(Strategy):
         diff = self.get_price_difference()
 
         if diff < -self.diff_thresh and len(order_depth.sell_orders) != 0:
-            best_asks = sorted(order_depth.sell_orders.keys())
-
-            i = 0
-            while i < self.trade_count and len(best_asks) > i:
-                if self.prod_position == self.max_pos:
-                    break
-                self.buy_product(best_asks, i, order_depth, orders)
-                i += 1
+            self.continuous_buy(order_depth, orders)
 
         if diff > self.diff_thresh and len(order_depth.buy_orders) != 0:
-            best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
-
-            i = 0
-            while i < self.trade_count and len(best_bids) > i:
-                if self.prod_position == -self.max_pos:
-                    break
-                self.sell_product(best_bids, i, order_depth, orders)
-
-                i += 1
+            self.continuous_sell(order_depth, orders)
 
     def get_price_difference(self) -> float:
         # Calculate the difference between the current mean and the mean from

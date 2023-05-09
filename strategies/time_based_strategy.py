@@ -1,5 +1,5 @@
 from datamodel import TradingState
-from strategies.CrossStrategy import CrossStrategy
+from strategies.cross_strategy import CrossStrategy
 
 
 class TimeBasedStrategy(CrossStrategy):
@@ -12,7 +12,8 @@ class TimeBasedStrategy(CrossStrategy):
     def trade(self, trading_state: TradingState, orders: list):
         order_depth = trading_state.order_depths[self.name]
         if 0 < trading_state.timestamp - self.berries_ripe_timestamp < 5000:
-            print("BERRIES ALMOST RIPE")
+            # print("BERRIES ALMOST RIPE")
+
             # start buying berries if they start being ripe
             if len(order_depth.sell_orders) != 0:
                 best_asks = sorted(order_depth.sell_orders.keys())
@@ -23,16 +24,9 @@ class TimeBasedStrategy(CrossStrategy):
                         break
                     self.buy_product(best_asks, i, order_depth, orders)
                     i += 1
-        elif 0 < trading_state.timestamp - self.berries_peak_timestamp < 5000:
-            print("BERRIES READY TO SELL")
-            if len(order_depth.buy_orders) != 0:
-                best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
 
-                i = 0
-                while i < self.trade_count and len(best_bids) > i:
-                    if self.prod_position == -self.max_pos:
-                        break
-                    self.sell_product(best_bids, i, order_depth, orders)
-                    i += 1
+        elif 0 < trading_state.timestamp - self.berries_peak_timestamp < 5000:
+            # print("BERRIES READY TO SELL")
+            self.continuous_sell(order_depth, orders)
         else:
             super().trade(trading_state, orders)

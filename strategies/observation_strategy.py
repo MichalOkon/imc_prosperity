@@ -1,5 +1,5 @@
-from datamodel import TradingState, Order
-from strategies.Strategy import Strategy
+from datamodel import TradingState, OrderDepth
+from strategies.strategy import Strategy
 
 
 class ObservationStrategy(Strategy):
@@ -22,11 +22,11 @@ class ObservationStrategy(Strategy):
                     self.old_dolphins = trading_state.observations["DOLPHIN_SIGHTINGS"]
                     continue
                 if trading_state.observations["DOLPHIN_SIGHTINGS"] - self.old_dolphins > 10:
-                    print("DOLHPINS SPOTTED")
+                    # print("DOLPHINS SPOTTED")
                     self.dolphins_spotted = True
                     self.dolphins_spotted_timestamp = trading_state.timestamp
                 if trading_state.observations["DOLPHIN_SIGHTINGS"] - self.old_dolphins < -10:
-                    print("DOLHPINS GONE")
+                    # print("DOLPHINS GONE")
                     self.dolphins_gone = True
                     self.dolphins_gone_timestamp = trading_state.timestamp
                 self.old_dolphins = trading_state.observations["DOLPHIN_SIGHTINGS"]
@@ -35,60 +35,28 @@ class ObservationStrategy(Strategy):
 
         self.handle_observations(trading_state)
 
-        order_depth = trading_state.order_depths[self.name]
+        order_depth: OrderDepth = trading_state.order_depths[self.name]
 
         if self.dolphins_spotted and trading_state.timestamp - self.dolphins_spotted_timestamp < self.dolphin_action_time:
             # start buying gear if dolphins have been spotted
             print(self.dolphins_spotted_timestamp)
-            print("BUYING GEAR")
+            # print("BUYING GEAR")
             print(trading_state.timestamp)
-            if len(order_depth.sell_orders) != 0:
-                best_asks = sorted(order_depth.sell_orders.keys())
-
-                i = 0
-                while i < self.trade_count and len(best_asks) > i:
-                    if self.prod_position == self.max_pos:
-                        break
-                    self.buy_product(best_asks, i, order_depth, orders)
-                    i += 1
+            self.continuous_buy(order_depth, orders)
 
         if self.dolphins_gone and trading_state.timestamp - self.dolphins_gone_timestamp < self.dolphin_action_time:
             # start selling gear if dolphins are going away
-            print("SELLING GEAR")
-            if len(order_depth.buy_orders) != 0:
-                best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
-                i = 0
-                while i < self.trade_count and len(best_bids) > i:
-
-                    if self.prod_position == -self.max_pos:
-                        break
-                    self.sell_product(best_bids, i, order_depth, orders)
-                    i += 1
+            # print("SELLING GEAR")
+            self.continuous_sell(order_depth, orders)
         if self.dolphins_spotted and trading_state.timestamp - self.dolphins_spotted_timestamp > self.gear_timestamp_diff:
             # Start selling after dolphins have been spotted for long enough
-            if len(order_depth.buy_orders) != 0:
-                best_bids = sorted(order_depth.buy_orders.keys(), reverse=True)
+            self.continuous_sell(order_depth, orders)
 
-                i = 0
-                while i < self.trade_count and len(best_bids) > i:
-                    if self.prod_position == -self.max_pos:
-                        break
-                    self.sell_product(best_bids, i, order_depth, orders)
-
-                    i += 1
             if trading_state.timestamp - self.dolphins_spotted_timestamp - self.gear_timestamp_diff > self.dolphin_action_time:
                 self.dolphins_spotted = False
 
         if self.dolphins_gone and trading_state.timestamp - self.dolphins_gone_timestamp > self.gear_timestamp_diff:
             # Start buying after dolphins have been gone for long enough
-            if len(order_depth.sell_orders) != 0:
-                best_asks = sorted(order_depth.sell_orders.keys())
-
-                i = 0
-                while i < self.trade_count and len(best_asks) > i:
-                    if self.prod_position == self.max_pos:
-                        break
-                    self.buy_product(best_asks, i, order_depth, orders)
-                    i += 1
+            self.continuous_buy(order_depth, orders)
             if trading_state.timestamp - self.dolphins_gone_timestamp - self.gear_timestamp_diff > self.dolphin_action_time:
                 self.dolphins_gone = False

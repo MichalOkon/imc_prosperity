@@ -1,7 +1,7 @@
-from strategies.CrossStrategy import CrossStrategy
-from strategies.DiffStrategy import DiffStrategy
-from strategies.FixedStrategy import FixedStrategy
-from strategies.TimeBasedStrategy import TimeBasedStrategy
+from strategies.cross_strategy import CrossStrategy
+from strategies.diff_strategy import DiffStrategy
+from strategies.fixed_strategy import FixedStrategy
+from strategies.time_based_strategy import TimeBasedStrategy
 
 
 class Pearls(FixedStrategy):

@@ -1,12 +1,9 @@
-from typing import Dict, List, Tuple
-
-import numpy as np
+from typing import Dict, List
+from datamodel import Order, TradingState
 
 from products.product import Pearls, Bananas, PinaColadas, Baguette, Ukulele, Basket, Coconut, Dip, Berries, DivingGear
 
 PEARLS_PRICE = 10000
-
-from datamodel import Order, Trade, TradingState
 
 
 class Trader:

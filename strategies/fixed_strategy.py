@@ -1,4 +1,4 @@
-from strategies.Strategy import Strategy
+from strategies.strategy import Strategy
 from datamodel import TradingState, OrderDepth
 
 
@@ -34,22 +34,3 @@ class FixedStrategy(Strategy):
                     break
                 self.sell_product(best_bids, i, order_depth, orders)
                 i += 1
-        # self.add_own_orders(orders)
-
-    # def add_own_orders(self, orders):
-    #     # Add some new orders on our own with very profitable prices hoping some silly bots fill them
-    #     orders.append(
-    #         Order(self.name, self.pearls_price - self.pearls_diff, max(0, min(20, self.max_pos - self.prod_position,
-    #                                                                           self.max_pos - orig_position,
-    #                                                                           self.max_pos - orig_position - new_buy_orders))))
-    #     orders.append(
-    #         Order(self.name, self.pearls_price + self.pearls_diff, -max(0, min(20, self.max_pos + self.prod_position,
-    #                                                                            self.max_pos + orig_position,
-    #                                                                            self.max_pos + orig_position - new_sell_orders))))
-
-    def cache_prices(self, order_depth: OrderDepth):
-        sell_orders = order_depth.sell_orders
-        buy_orders = order_depth.buy_orders
-
-        self.old_asks.append(sell_orders)
-        self.old_bids.append(buy_orders)
