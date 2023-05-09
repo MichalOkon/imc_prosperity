@@ -1,4 +1,4 @@
-from simulator import Simulator
+from .simulator import Simulator
 import sys
 import importlib
 
