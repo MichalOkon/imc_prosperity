@@ -1,7 +1,7 @@
 import importlib
 import sys
 
-from simulator import Simulator
+from .simulator import Simulator
 
 
 def main():

@@ -17,10 +17,16 @@ The code has been tested with Python 3.11.0.
 To execute the simulation, enter the following command in your console:
 
 ```
-python runner.py <name_of_the_trader> <csv_filename_with_round_data> <csv_filename_with_trades_data>
+ python -m simulator.simulator_test <name_of_the_trader> <csv_filename_with_round_data> <csv_filename_with_trades_data>
 ```
 
 Replace `<name_of_the_trader>`, `<csv_filename_with_round_data>`, and `<csv_filename_with_trades_data>` with the appropriate values.
+
+For example, to run the simulation with a sample trader, you can use the following command:
+
+```
+python -m simulator.simulator_test trader datasets/prices_round_4_day_1.csv datasets/trades_round_4_day_1_nn.csv 
+```
 
 ## Code Organization
 
