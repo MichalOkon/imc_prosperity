@@ -1,6 +1,6 @@
 # IMC Prosperity Trading Algorithm
 
-This repository contains code developed by the team Zahcheesha for the IMC trading competition. Our algorithm secured a position in the top 1% of all competing teams. In addition, we have developed a versatile simulator to test trading strategies without the need for official game access.
+This repository contains code developed by the team Zahcheesha for the IMC trading competition. Our algorithm secured 57th place competing against over 7000 teams (top 1%). In addition, we have developed a versatile simulator to test trading strategies without the need for official game access.
 
 ## Prerequisites
 
