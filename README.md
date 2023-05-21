@@ -1,6 +1,6 @@
 # IMC Prosperity Trading Algorithm
 
-This repository contains code developed by the team Zahcheesha for the IMC trading competition. Our algorithm secured a position in the top 1% of all competing teams. In addition, we have developed a versatile simulator to test trading strategies without the need for official game access.
+This repository contains code developed by the team Zahcheesha for the IMC trading competition. Our algorithm secured 57th place competing against over 7000 teams (top 1%). In addition, we have developed a versatile simulator to test trading strategies without the need for official game access.
 
 ## Prerequisites
 
@@ -17,10 +17,16 @@ The code has been tested with Python 3.11.0.
 To execute the simulation, enter the following command in your console:
 
 ```
-python runner.py <name_of_the_trader> <csv_filename_with_round_data> <csv_filename_with_trades_data>
+ python -m simulator.simulator_test trader <csv_filename_with_round_data> <csv_filename_with_trades_data>
 ```
 
-Replace `<name_of_the_trader>`, `<csv_filename_with_round_data>`, and `<csv_filename_with_trades_data>` with the appropriate values.
+Replace  `<csv_filename_with_round_data>`, and `<csv_filename_with_trades_data>` with the appropriate values.
+
+For example, to run the simulation with a sample trader, you can use the following command:
+
+```
+python -m simulator.simulator_test trader datasets/island-data-bottle-round-4/prices_round_4_day_1.csv datasets/island-data-bottle-round-4/trades_round_4_day_1_nn.csv 
+```
 
 ## Code Organization
 
